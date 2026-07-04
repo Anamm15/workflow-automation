@@ -17,6 +17,9 @@ import (
 	authDeliveryHttp "workflow-automation/internal/modules/auth/delivery/http"
 	authRepo "workflow-automation/internal/modules/auth/repository"
 	authUse "workflow-automation/internal/modules/auth/usecase"
+	userDeliveryHttp "workflow-automation/internal/modules/user/delivery/http"
+	userRepo "workflow-automation/internal/modules/user/repository"
+	userUse "workflow-automation/internal/modules/user/usecase"
 	"workflow-automation/internal/shared/database"
 	"workflow-automation/internal/shared/email"
 	"workflow-automation/internal/shared/logger"
@@ -76,18 +79,22 @@ func main() {
 	}
 
 	accountRepo := authRepo.NewPGAccountRepository(pgPool)
-	userRepo := authRepo.NewPGUserRepository(pgPool)
 	sessionRepo := authRepo.NewPGSessionRepository(pgPool)
+	
+	// 5. Initialize User Module
+	pgUserRepo := userRepo.NewPGUserRepository(pgPool)
+	userUseCase, userFacade := userUse.NewUserUseCase(pgUserRepo)
 
+	// 6. Initialize Auth Module
 	authUseCase := authUse.NewAuthUseCase(
 		accountRepo,
-		userRepo,
+		userFacade,
 		sessionRepo,
 		mockEmailSvc,
 		jwtSecret,
 	)
 
-	// 6. Setup Gin Router
+	// 7. Setup Gin Router
 	if appEnv == "production" {
 		gin.SetMode(gin.ReleaseMode)
 	}
@@ -112,10 +119,11 @@ func main() {
 	// API Version Group
 	apiV1 := router.Group("/api/v1")
 
-	// 7. Register Endpoints
+	// 8. Register Endpoints
 	authDeliveryHttp.NewAuthHandler(apiV1, authUseCase, jwtSecret)
+	userDeliveryHttp.NewUserHandler(apiV1, userUseCase, jwtSecret)
 
-	// 8. Start HTTP Server with Graceful Shutdown
+	// 9. Start HTTP Server with Graceful Shutdown
 	srv := &http.Server{
 		Addr:    ":" + port,
 		Handler: router,

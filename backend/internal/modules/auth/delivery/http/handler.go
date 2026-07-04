@@ -153,22 +153,20 @@ func (h *AuthHandler) LogoutAll(c *gin.Context) {
 func (h *AuthHandler) GetMe(c *gin.Context) {
 	usrCtx, _ := middleware.GetUserContext(c)
 
-	acc, usr, err := h.usecase.GetMe(c.Request.Context(), usrCtx.AccountID)
+	acc, err := h.usecase.GetMe(c.Request.Context(), usrCtx.AccountID)
 	if err != nil {
-		response.Error(c, http.StatusInternalServerError, "Failed to fetch profile", "INTERNAL_ERROR")
+		response.Error(c, http.StatusInternalServerError, "Failed to fetch account", "INTERNAL_ERROR")
 		return
 	}
 
-	res := ProfileResponse{
+	res := AccountResponse{
 		AccountID:   acc.ID,
 		Email:       acc.Email,
 		IsVerified:  acc.IsVerified,
-		PhoneNumber: usr.PhoneNumber,
-		AvatarURL:   usr.AvatarURL,
 		JoinedAt:    acc.CreatedAt,
 	}
 
-	response.JSON(c, http.StatusOK, "Profile fetched", res, nil)
+	response.JSON(c, http.StatusOK, "Account fetched", res, nil)
 }
 
 func (h *AuthHandler) ChangePassword(c *gin.Context) {

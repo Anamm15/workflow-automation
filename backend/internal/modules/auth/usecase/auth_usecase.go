@@ -17,7 +17,7 @@ const (
 
 type authUseCase struct {
 	accRepo   domain.AccountRepository
-	usrRepo   domain.UserRepository
+	userFac   domain.UserProfileFacade
 	sessRepo  domain.SessionRepository
 	emailSvc  domain.EmailService
 	jwtSecret string
@@ -25,14 +25,14 @@ type authUseCase struct {
 
 func NewAuthUseCase(
 	accRepo domain.AccountRepository,
-	usrRepo domain.UserRepository,
+	userFac domain.UserProfileFacade,
 	sessRepo domain.SessionRepository,
 	emailSvc domain.EmailService,
 	jwtSecret string,
 ) domain.AuthUseCase {
 	return &authUseCase{
 		accRepo:   accRepo,
-		usrRepo:   usrRepo,
+		userFac:   userFac,
 		sessRepo:  sessRepo,
 		emailSvc:  emailSvc,
 		jwtSecret: jwtSecret,
@@ -64,14 +64,8 @@ func (u *authUseCase) Register(ctx context.Context, email, password string) erro
 		return err
 	}
 
-	user := &domain.User{
-		ID:        uuid.New(),
-		AccountID: account.ID,
-		CreatedAt: now,
-		UpdatedAt: now,
-	}
-
-	if err := u.usrRepo.Create(ctx, user); err != nil {
+	// Trigger User Module to create profile
+	if err := u.userFac.CreateUserForAccount(ctx, account.ID, email); err != nil {
 		return err
 	}
 
@@ -210,16 +204,12 @@ func (u *authUseCase) LogoutAll(ctx context.Context, accountID uuid.UUID) error 
 	return u.sessRepo.RevokeAllByAccountID(ctx, accountID)
 }
 
-func (u *authUseCase) GetMe(ctx context.Context, accountID uuid.UUID) (*domain.Account, *domain.User, error) {
+func (u *authUseCase) GetMe(ctx context.Context, accountID uuid.UUID) (*domain.Account, error) {
 	acc, err := u.accRepo.GetByID(ctx, accountID)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
-	usr, err := u.usrRepo.GetByAccountID(ctx, accountID)
-	if err != nil {
-		return nil, nil, err
-	}
-	return acc, usr, nil
+	return acc, nil
 }
 
 func (u *authUseCase) ChangePassword(ctx context.Context, accountID uuid.UUID, oldPassword, newPassword string) error {

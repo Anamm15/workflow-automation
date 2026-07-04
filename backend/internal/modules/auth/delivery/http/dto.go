@@ -24,11 +24,9 @@ type TokenResponse struct {
 	AccessToken string `json:"access_token"`
 }
 
-type ProfileResponse struct {
+type AccountResponse struct {
 	AccountID   uuid.UUID `json:"account_id"`
 	Email       string    `json:"email"`
 	IsVerified  bool      `json:"is_verified"`
-	PhoneNumber *string   `json:"phone_number"`
-	AvatarURL   *string   `json:"avatar_url"`
 	JoinedAt    time.Time `json:"joined_at"`
 }

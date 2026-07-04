@@ -14,12 +14,6 @@ type AccountRepository interface {
 	Update(ctx context.Context, account *Account) error
 }
 
-// UserRepository handles database operations for User
-type UserRepository interface {
-	Create(ctx context.Context, user *User) error
-	GetByAccountID(ctx context.Context, accountID uuid.UUID) (*User, error)
-	Update(ctx context.Context, user *User) error
-}
 
 // SessionRepository handles database operations for Session
 type SessionRepository interface {
@@ -49,11 +43,16 @@ type AuthUseCase interface {
 	RefreshToken(ctx context.Context, refreshToken, userAgent, ipAddress string) (*TokenPair, error)
 	Logout(ctx context.Context, refreshToken string) error
 	LogoutAll(ctx context.Context, accountID uuid.UUID) error
-	GetMe(ctx context.Context, accountID uuid.UUID) (*Account, *User, error)
+	GetMe(ctx context.Context, accountID uuid.UUID) (*Account, error)
 	
 	ChangePassword(ctx context.Context, accountID uuid.UUID, oldPassword, newPassword string) error
 	ForgotPassword(ctx context.Context, email string) error
 	ResetPassword(ctx context.Context, token, newPassword string) error
 	VerifyEmail(ctx context.Context, token string) error
 	ResendVerification(ctx context.Context, email string) error
+}
+
+// UserProfileFacade is used to communicate with the User module
+type UserProfileFacade interface {
+	CreateUserForAccount(ctx context.Context, accountID uuid.UUID, email string) error
 }

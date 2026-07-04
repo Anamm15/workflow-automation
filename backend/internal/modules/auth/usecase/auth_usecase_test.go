@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/google/uuid"
@@ -35,10 +36,16 @@ func (m *mockAccRepo) Update(ctx context.Context, a *domain.Account) error {
 	return nil
 }
 
-type mockUsrRepo struct{}
-func (m *mockUsrRepo) Create(ctx context.Context, u *domain.User) error { return nil }
-func (m *mockUsrRepo) GetByAccountID(ctx context.Context, id uuid.UUID) (*domain.User, error) { return nil, nil }
-func (m *mockUsrRepo) Update(ctx context.Context, u *domain.User) error { return nil }
+type mockUserFacade struct {
+	shouldError bool
+}
+
+func (m *mockUserFacade) CreateUserForAccount(ctx context.Context, accountID uuid.UUID, email string) error {
+	if m.shouldError {
+		return errors.New("mock user facade error")
+	}
+	return nil
+}
 
 type mockSessRepo struct {
 	sessions map[uuid.UUID]*domain.Session
@@ -80,13 +87,11 @@ func (m *mockEmail) SendPasswordResetEmail(ctx context.Context, toEmail, token s
 
 // --- Tests ---
 func TestRegisterAndLoginFlow(t *testing.T) {
-	uc := NewAuthUseCase(
-		&mockAccRepo{accounts: make(map[string]*domain.Account)},
-		&mockUsrRepo{},
-		&mockSessRepo{sessions: make(map[uuid.UUID]*domain.Session)},
-		&mockEmail{},
-		"secret",
-	)
+	mockAcc := &mockAccRepo{accounts: make(map[string]*domain.Account)}
+	mockFac := &mockUserFacade{}
+	mockSess := &mockSessRepo{sessions: make(map[uuid.UUID]*domain.Session)}
+	mockEmail := &mockEmail{}
+	uc := NewAuthUseCase(mockAcc, mockFac, mockSess, mockEmail, "secret")
 
 	ctx := context.Background()
 
