@@ -2,7 +2,6 @@ package usecase
 
 import (
 	"context"
-	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -45,19 +44,13 @@ func (u *userUseCase) UpdateProfile(ctx context.Context, accountID uuid.UUID, na
 
 // --- UserFacade Implementation ---
 
-func (u *userUseCase) CreateUserForAccount(ctx context.Context, accountID uuid.UUID, email string) error {
-	// Extract name from email (before @)
-	name := email
-	if idx := strings.Index(email, "@"); idx != -1 {
-		name = email[:idx]
-	}
-
+func (u *userUseCase) CreateUserForAccount(ctx context.Context, accountID uuid.UUID, email, name, timezone string) error {
 	now := time.Now()
 	user := &domain.User{
 		ID:        uuid.New(),
 		AccountID: accountID,
 		Name:      name,
-		Timezone:  "UTC", // Default timezone
+		Timezone:  timezone,
 		CreatedAt: now,
 		UpdatedAt: now,
 	}

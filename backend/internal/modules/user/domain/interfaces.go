@@ -23,5 +23,5 @@ type UserUseCase interface {
 // UserFacade is the public contract for inter-module communication.
 // Used by the Auth module to trigger user profile creation upon registration.
 type UserFacade interface {
-	CreateUserForAccount(ctx context.Context, accountID uuid.UUID, email string) error
+	CreateUserForAccount(ctx context.Context, accountID uuid.UUID, email, name, timezone string) error
 }

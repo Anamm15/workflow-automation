@@ -38,7 +38,7 @@ type TokenPair struct {
 
 // AuthUseCase defines the application logic for authentication
 type AuthUseCase interface {
-	Register(ctx context.Context, email, password string) error
+	Register(ctx context.Context, email, password, name, timezone string) error
 	Login(ctx context.Context, email, password, userAgent, ipAddress string) (*TokenPair, error)
 	RefreshToken(ctx context.Context, refreshToken, userAgent, ipAddress string) (*TokenPair, error)
 	Logout(ctx context.Context, refreshToken string) error
@@ -54,5 +54,5 @@ type AuthUseCase interface {
 
 // UserProfileFacade is used to communicate with the User module
 type UserProfileFacade interface {
-	CreateUserForAccount(ctx context.Context, accountID uuid.UUID, email string) error
+	CreateUserForAccount(ctx context.Context, accountID uuid.UUID, email, name, timezone string) error
 }

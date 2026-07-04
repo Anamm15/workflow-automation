@@ -66,8 +66,11 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		response.Error(c, http.StatusBadRequest, err.Error(), "INVALID_INPUT")
 		return
 	}
+	if req.Timezone == "" {
+		req.Timezone = "UTC"
+	}
 
-	if err := h.usecase.Register(c.Request.Context(), req.Email, req.Password); err != nil {
+	if err := h.usecase.Register(c.Request.Context(), req.Email, req.Password, req.Name, req.Timezone); err != nil {
 		if err == domain.ErrEmailAlreadyExists {
 			response.Error(c, http.StatusConflict, err.Error(), "EMAIL_EXISTS")
 			return

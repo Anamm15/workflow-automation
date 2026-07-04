@@ -40,7 +40,7 @@ type mockUserFacade struct {
 	shouldError bool
 }
 
-func (m *mockUserFacade) CreateUserForAccount(ctx context.Context, accountID uuid.UUID, email string) error {
+func (m *mockUserFacade) CreateUserForAccount(ctx context.Context, accountID uuid.UUID, email, name, timezone string) error {
 	if m.shouldError {
 		return errors.New("mock user facade error")
 	}
@@ -96,7 +96,7 @@ func TestRegisterAndLoginFlow(t *testing.T) {
 	ctx := context.Background()
 
 	// 1. Register
-	err := uc.Register(ctx, "test@example.com", "Password123!")
+	err := uc.Register(ctx, "test@example.com", "Password123!", "Test User", "UTC")
 	if err != nil {
 		t.Fatalf("Expected nil, got %v", err)
 	}

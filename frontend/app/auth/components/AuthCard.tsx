@@ -1,50 +1,53 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { useState, FormEvent } from "react";
+import { useState } from "react";
 import { Mail, Lock, User, ArrowRight, CheckCircle2, Loader2 } from "lucide-react";
 import { AnimatedInput } from "./AnimatedInput";
 import { cn } from "@/lib/utils";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useAuthMutations } from "../hooks/useAuthMutations";
+import { loginSchema, registerSchema, RegisterFormData } from "../hooks/useAuthSchemas";
 
 export function AuthCard() {
   const [isLogin, setIsLogin] = useState(true);
-  const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
 
-  // Form State
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [name, setName] = useState("");
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const currentSchema = isLogin ? loginSchema : registerSchema;
 
-  const validate = () => {
-    const newErrors: Record<string, string> = {};
-    if (!email.includes("@")) newErrors.email = "Please enter a valid email address.";
-    if (password.length < 6) newErrors.password = "Password must be at least 6 characters.";
-    if (!isLogin && name.length < 2) newErrors.name = "Name must be at least 2 characters.";
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    reset,
+    watch,
+  } = useForm<RegisterFormData>({
+    resolver: zodResolver(currentSchema as any),
+    defaultValues: { email: "", password: "", name: "" },
+  });
 
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-    if (!validate()) return;
+  // Watch fields to trigger glow effects
+  const emailValue = watch("email");
+  const passwordValue = watch("password");
+  const nameValue = watch("name");
 
-    setIsLoading(true);
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    setIsLoading(false);
-    setIsSuccess(true);
+  // Auth Mutations logic extracted to hook
+  const { loginMutation, registerMutation } = useAuthMutations(
+    setIsSuccess,
+    setIsLogin,
+    reset
+  );
 
-    // Reset after success
-    setTimeout(() => {
-      setIsSuccess(false);
-      if (!isLogin) setIsLogin(true); // Switch to login after successful register
-      setEmail("");
-      setPassword("");
-      setName("");
-    }, 3000);
+  const isLoading = loginMutation.isPending || registerMutation.isPending;
+
+  const onSubmit = (data: RegisterFormData) => {
+    if (isLogin) {
+      loginMutation.mutate({ email: data.email, password: data.password });
+    } else {
+      registerMutation.mutate(data);
+    }
   };
 
   return (
@@ -89,7 +92,7 @@ export function AuthCard() {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
                 transition={{ duration: 0.3 }}
-                onSubmit={handleSubmit}
+                onSubmit={handleSubmit(onSubmit)}
                 className="flex flex-col gap-4"
               >
                 <AnimatePresence>
@@ -103,14 +106,12 @@ export function AuthCard() {
                         label="Full Name"
                         type="text"
                         icon={<User size={18} />}
-                        value={name}
-                        onChange={(e) => {
-                          setName(e.target.value);
-                          setIsTyping(true);
-                          setErrors((prev) => ({ ...prev, name: "" }));
-                        }}
-                        onBlur={() => setIsTyping(false)}
-                        error={errors.name}
+                        value={nameValue}
+                        {...register("name", {
+                          onChange: () => setIsTyping(true),
+                          onBlur: () => setIsTyping(false),
+                        })}
+                        error={errors.name?.message}
                         disabled={isLoading}
                       />
                     </motion.div>
@@ -121,14 +122,12 @@ export function AuthCard() {
                   label="Email Address"
                   type="email"
                   icon={<Mail size={18} />}
-                  value={email}
-                  onChange={(e) => {
-                    setEmail(e.target.value);
-                    setIsTyping(true);
-                    setErrors((prev) => ({ ...prev, email: "" }));
-                  }}
-                  onBlur={() => setIsTyping(false)}
-                  error={errors.email}
+                  value={emailValue}
+                  {...register("email", {
+                    onChange: () => setIsTyping(true),
+                    onBlur: () => setIsTyping(false),
+                  })}
+                  error={errors.email?.message}
                   disabled={isLoading}
                 />
 
@@ -136,14 +135,12 @@ export function AuthCard() {
                   label="Password"
                   type="password"
                   icon={<Lock size={18} />}
-                  value={password}
-                  onChange={(e) => {
-                    setPassword(e.target.value);
-                    setIsTyping(true);
-                    setErrors((prev) => ({ ...prev, password: "" }));
-                  }}
-                  onBlur={() => setIsTyping(false)}
-                  error={errors.password}
+                  value={passwordValue}
+                  {...register("password", {
+                    onChange: () => setIsTyping(true),
+                    onBlur: () => setIsTyping(false),
+                  })}
+                  error={errors.password?.message}
                   disabled={isLoading}
                 />
 
@@ -193,7 +190,7 @@ export function AuthCard() {
                     type="button"
                     onClick={() => {
                       setIsLogin(!isLogin);
-                      setErrors({});
+                      reset();
                     }}
                     className="font-medium text-primary hover:underline hover:text-primary-hover transition-colors"
                   >
@@ -224,7 +221,7 @@ export function AuthCard() {
                 >
                   <h3 className="text-xl font-bold">Successfully authenticated!</h3>
                   <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-2">
-                    Redirecting to your workspace...
+                    {isLogin ? "Redirecting to your workspace..." : "Account created successfully!"}
                   </p>
                 </motion.div>
 

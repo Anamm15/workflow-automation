@@ -21,7 +21,7 @@
 - **Container / Presenter Pattern**: Separate business logic components (Containers) from purely presentational components (Presenters).
 - **Custom Hooks**: Extract complex and repetitive stateful logic into Custom Hooks.
 - **Code Line Style Preference**: Try to keep the code at least 100 lines per file to prevent unnecessary long files and make it more readable. If a component requires more than 100 lines, then it is better to split it into smaller components.
-- **Fetching API**: Use Tanstack Query for data fetching, caching, and state management. Use useForm hook for form handling.
+- **Fetching API**: Use Axios and Tanstack Query for data fetching, caching, and state management. Use useForm hook for form handling.
 
 ## 4. Agent Operations
 - **Context Analysis**: Always read relevant files (such as `package.json`, router configurations, and main state files) using search tools before making architectural changes.

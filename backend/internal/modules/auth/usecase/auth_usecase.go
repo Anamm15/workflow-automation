@@ -39,7 +39,7 @@ func NewAuthUseCase(
 	}
 }
 
-func (u *authUseCase) Register(ctx context.Context, email, password string) error {
+func (u *authUseCase) Register(ctx context.Context, email, password, name, timezone string) error {
 	_, err := u.accRepo.GetByEmail(ctx, email)
 	if err == nil {
 		return domain.ErrEmailAlreadyExists
@@ -65,7 +65,7 @@ func (u *authUseCase) Register(ctx context.Context, email, password string) erro
 	}
 
 	// Trigger User Module to create profile
-	if err := u.userFac.CreateUserForAccount(ctx, account.ID, email); err != nil {
+	if err := u.userFac.CreateUserForAccount(ctx, account.ID, email, name, timezone); err != nil {
 		return err
 	}
 
