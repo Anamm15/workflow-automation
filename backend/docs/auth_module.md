@@ -12,11 +12,16 @@ The Auth module is responsible for managing authentication credentials, secure s
 
 ## Authentication Flow
 
-### 1. Registration (`POST /api/v1/auth/register`)
-- Accepts `email` and `password`.
-- Hashes the password using `bcrypt`.
-- Persists the account in the `accounts` table.
-- **Cross-Module Trigger**: Synchronously calls the `UserFacade.CreateUserForAccount` method to initialize the user's profile in the `User` module.
+- **`POST /api/v1/auth/register`**: 
+  - Accepts `email`, `username`, `password`, `name`, `timezone`.
+  - Creates the authentication `accounts` record and delegates to the User module to create the `users` profile.
+- **`POST /api/v1/auth/login`**: 
+  - Accepts `email` and `password`.
+  - Returns a short-lived `access_token` (JWT) in the response body.
+  - Sets a long-lived `refresh_token` in a secure `HttpOnly` cookie.
+- **`GET /api/v1/auth/search`**:
+  - Searches accounts using the `?q=` parameter (matches against `username` or `email` using partial `ILIKE`).
+  - Returns a list of public `AccountResponse` objects.
 
 ### 2. Login (`POST /api/v1/auth/login`)
 - Verifies credentials against the `accounts` table.
@@ -35,8 +40,15 @@ The Auth module is responsible for managing authentication credentials, secure s
 - Invalidates the specific session using the provided Refresh Token.
 
 ## Database Schema (`accounts` & `sessions`)
-- `accounts`: Stores `id`, `email`, `password_hash`, `is_verified`.
-- `sessions`: Stores `id`, `account_id`, `refresh_token_hash`, `user_agent`, `ip_address`, `expires_at`, `revoked`.
+### `accounts`
+- `id` (UUID, Primary Key)
+- `email` (VARCHAR, 255, Unique)
+- `username` (VARCHAR, 50, Unique)
+- `password_hash` (VARCHAR, 255)
+- `is_verified` (BOOLEAN)
+
+### `sessions`
+- Stores `id`, `account_id`, `refresh_token_hash`, `user_agent`, `ip_address`, `expires_at`, `revoked`.
 
 ## Endpoints
 - `POST /api/v1/auth/register`

@@ -20,6 +20,8 @@ components:
           format: uuid
         email:
           type: string
+        username:
+          type: string
         is_verified:
           type: boolean
         created_at:
@@ -39,11 +41,15 @@ paths:
               type: object
               required:
                 - email
+                - username
                 - password
               properties:
                 email:
                   type: string
                   format: email
+                username:
+                  type: string
+                  minLength: 3
                 password:
                   type: string
                   minLength: 8
@@ -101,3 +107,31 @@ paths:
                     example: true
                   data:
                     $ref: '#/components/schemas/AccountResponse'
+  /auth/search:
+    get:
+      tags:
+        - Authentication
+      summary: Search accounts by username or email
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: q
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of accounts
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/AccountResponse'

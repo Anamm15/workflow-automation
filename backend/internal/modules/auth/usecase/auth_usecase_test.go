@@ -35,6 +35,9 @@ func (m *mockAccRepo) Update(ctx context.Context, a *domain.Account) error {
 	m.accounts[a.Email] = a
 	return nil
 }
+func (m *mockAccRepo) SearchAccount(ctx context.Context, query string) ([]*domain.Account, error) {
+	return []*domain.Account{}, nil
+}
 
 type mockUserFacade struct {
 	shouldError bool
@@ -96,7 +99,7 @@ func TestRegisterAndLoginFlow(t *testing.T) {
 	ctx := context.Background()
 
 	// 1. Register
-	err := uc.Register(ctx, "test@example.com", "Password123!", "Test User", "UTC")
+	err := uc.Register(ctx, "test@example.com", "testuser", "Password123!", "Test User", "UTC")
 	if err != nil {
 		t.Fatalf("Expected nil, got %v", err)
 	}

@@ -38,6 +38,7 @@ func NewAuthHandler(r *gin.RouterGroup, uc domain.AuthUseCase, jwtSecret string)
 		protected.POST("/logout", handler.Logout)
 		protected.POST("/logout-all", handler.LogoutAll)
 		protected.GET("/me", handler.GetMe)
+		protected.GET("/search", handler.Search)
 		protected.POST("/change-password", handler.ChangePassword)
 	}
 }
@@ -70,7 +71,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		req.Timezone = "UTC"
 	}
 
-	if err := h.usecase.Register(c.Request.Context(), req.Email, req.Password, req.Name, req.Timezone); err != nil {
+	if err := h.usecase.Register(c.Request.Context(), req.Email, req.Username, req.Password, req.Name, req.Timezone); err != nil {
 		if err == domain.ErrEmailAlreadyExists {
 			response.Error(c, http.StatusConflict, err.Error(), "EMAIL_EXISTS")
 			return
@@ -165,6 +166,7 @@ func (h *AuthHandler) GetMe(c *gin.Context) {
 	res := AccountResponse{
 		AccountID:   acc.ID,
 		Email:       acc.Email,
+		Username:    acc.Username,
 		IsVerified:  acc.IsVerified,
 		JoinedAt:    acc.CreatedAt,
 	}
@@ -192,4 +194,35 @@ func (h *AuthHandler) ChangePassword(c *gin.Context) {
 
 	h.clearRefreshCookie(c)
 	response.JSON(c, http.StatusOK, "Password changed successfully. Please login again.", nil, nil)
+}
+
+func (h *AuthHandler) Search(c *gin.Context) {
+	query := c.Query("q")
+	if query == "" {
+		response.Error(c, http.StatusBadRequest, "Query parameter 'q' is required", "INVALID_INPUT")
+		return
+	}
+
+	accounts, err := h.usecase.SearchAccount(c.Request.Context(), query)
+	if err != nil {
+		response.Error(c, http.StatusInternalServerError, "Failed to search accounts", "INTERNAL_ERROR")
+		return
+	}
+
+	var res []AccountResponse
+	for _, acc := range accounts {
+		res = append(res, AccountResponse{
+			AccountID:   acc.ID,
+			Email:       acc.Email,
+			Username:    acc.Username,
+			IsVerified:  acc.IsVerified,
+			JoinedAt:    acc.CreatedAt,
+		})
+	}
+	
+	if res == nil {
+		res = []AccountResponse{}
+	}
+
+	response.JSON(c, http.StatusOK, "Accounts retrieved", res, nil)
 }

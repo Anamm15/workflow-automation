@@ -39,7 +39,7 @@ func NewAuthUseCase(
 	}
 }
 
-func (u *authUseCase) Register(ctx context.Context, email, password, name, timezone string) error {
+func (u *authUseCase) Register(ctx context.Context, email, username, password, name, timezone string) error {
 	_, err := u.accRepo.GetByEmail(ctx, email)
 	if err == nil {
 		return domain.ErrEmailAlreadyExists
@@ -54,6 +54,7 @@ func (u *authUseCase) Register(ctx context.Context, email, password, name, timez
 	account := &domain.Account{
 		ID:           uuid.New(),
 		Email:        email,
+		Username:     username,
 		PasswordHash: hashedPassword,
 		IsVerified:   false, // Can be set to true if verification is skipped
 		CreatedAt:    now,
@@ -210,6 +211,13 @@ func (u *authUseCase) GetMe(ctx context.Context, accountID uuid.UUID) (*domain.A
 		return nil, err
 	}
 	return acc, nil
+}
+
+func (u *authUseCase) SearchAccount(ctx context.Context, query string) ([]*domain.Account, error) {
+	if query == "" {
+		return []*domain.Account{}, nil
+	}
+	return u.accRepo.SearchAccount(ctx, query)
 }
 
 func (u *authUseCase) ChangePassword(ctx context.Context, accountID uuid.UUID, oldPassword, newPassword string) error {

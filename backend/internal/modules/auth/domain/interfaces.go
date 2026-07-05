@@ -11,6 +11,7 @@ type AccountRepository interface {
 	Create(ctx context.Context, account *Account) error
 	GetByID(ctx context.Context, id uuid.UUID) (*Account, error)
 	GetByEmail(ctx context.Context, email string) (*Account, error)
+	SearchAccount(ctx context.Context, query string) ([]*Account, error)
 	Update(ctx context.Context, account *Account) error
 }
 
@@ -38,12 +39,13 @@ type TokenPair struct {
 
 // AuthUseCase defines the application logic for authentication
 type AuthUseCase interface {
-	Register(ctx context.Context, email, password, name, timezone string) error
+	Register(ctx context.Context, email, username, password, name, timezone string) error
 	Login(ctx context.Context, email, password, userAgent, ipAddress string) (*TokenPair, error)
 	RefreshToken(ctx context.Context, refreshToken, userAgent, ipAddress string) (*TokenPair, error)
 	Logout(ctx context.Context, refreshToken string) error
 	LogoutAll(ctx context.Context, accountID uuid.UUID) error
 	GetMe(ctx context.Context, accountID uuid.UUID) (*Account, error)
+	SearchAccount(ctx context.Context, query string) ([]*Account, error)
 	
 	ChangePassword(ctx context.Context, accountID uuid.UUID, oldPassword, newPassword string) error
 	ForgotPassword(ctx context.Context, email string) error

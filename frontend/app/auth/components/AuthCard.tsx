@@ -25,7 +25,7 @@ export function AuthCard() {
     watch,
   } = useForm<RegisterFormData>({
     resolver: zodResolver(currentSchema as any),
-    defaultValues: { email: "", password: "", name: "" },
+    defaultValues: { email: "", password: "", name: "", username: "" },
   });
 
   // Watch fields to trigger glow effects
@@ -101,6 +101,7 @@ export function AuthCard() {
                       initial={{ opacity: 0, height: 0 }}
                       animate={{ opacity: 1, height: "auto" }}
                       exit={{ opacity: 0, height: 0 }}
+                      className="flex flex-col gap-4"
                     >
                       <AnimatedInput
                         label="Full Name"
@@ -112,6 +113,18 @@ export function AuthCard() {
                           onBlur: () => setIsTyping(false),
                         })}
                         error={errors.name?.message}
+                        disabled={isLoading}
+                      />
+                      <AnimatedInput
+                        label="Username"
+                        type="text"
+                        icon={<User size={18} />}
+                        value={watch("username")}
+                        {...register("username", {
+                          onChange: () => setIsTyping(true),
+                          onBlur: () => setIsTyping(false),
+                        })}
+                        error={errors.username?.message}
                         disabled={isLoading}
                       />
                     </motion.div>

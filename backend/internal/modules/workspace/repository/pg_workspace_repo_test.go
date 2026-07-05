@@ -46,7 +46,7 @@ func setupTestDB(t *testing.T) (*pgxpool.Pool, func()) {
 	// 4. Run basic schema (Accounts, Users, Workspaces, Members)
 	// For integration testing, we need the prerequisite tables too.
 	schema := `
-	CREATE TABLE accounts (id UUID PRIMARY KEY, email VARCHAR(255) UNIQUE NOT NULL, password_hash VARCHAR(255) NOT NULL, is_verified BOOLEAN DEFAULT FALSE, created_at TIMESTAMP, updated_at TIMESTAMP);
+	CREATE TABLE accounts (id UUID PRIMARY KEY, email VARCHAR(255) UNIQUE NOT NULL, username VARCHAR(50) UNIQUE NOT NULL, password_hash VARCHAR(255) NOT NULL, is_verified BOOLEAN DEFAULT FALSE, created_at TIMESTAMP, updated_at TIMESTAMP);
 	CREATE TABLE users (id UUID PRIMARY KEY, account_id UUID UNIQUE NOT NULL REFERENCES accounts(id) ON DELETE CASCADE, name VARCHAR(255) NOT NULL, avatar_url VARCHAR(255), ui_preferences JSONB, timezone VARCHAR(50), created_at TIMESTAMP, updated_at TIMESTAMP);
 	
 	CREATE TABLE workspaces (
@@ -103,7 +103,7 @@ func TestPGWorkspaceRepository_CreateWithMember(t *testing.T) {
 	// Setup prerequisites (Account & User)
 	accID := uuid.New()
 	userID := uuid.New()
-	_, err := pool.Exec(ctx, "INSERT INTO accounts (id, email, password_hash) VALUES ($1, $2, $3)", accID, "test@test.com", "hash")
+	_, err := pool.Exec(ctx, "INSERT INTO accounts (id, email, username, password_hash) VALUES ($1, $2, $3, $4)", accID, "test@test.com", "testuser_test", "hash")
 	if err != nil {
 		t.Fatalf("failed to insert mock account: %v", err)
 	}
