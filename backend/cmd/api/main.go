@@ -20,6 +20,9 @@ import (
 	userDeliveryHttp "workflow-automation/internal/modules/user/delivery/http"
 	userRepo "workflow-automation/internal/modules/user/repository"
 	userUse "workflow-automation/internal/modules/user/usecase"
+	workspaceDeliveryHttp "workflow-automation/internal/modules/workspace/delivery/http"
+	workspaceRepo "workflow-automation/internal/modules/workspace/repository"
+	workspaceUse "workflow-automation/internal/modules/workspace/usecase"
 	"workflow-automation/internal/shared/database"
 	"workflow-automation/internal/shared/email"
 	"workflow-automation/internal/shared/logger"
@@ -94,7 +97,11 @@ func main() {
 		jwtSecret,
 	)
 
-	// 7. Setup Gin Router
+	// 7. Initialize Workspace Module
+	pgWorkspaceRepo := workspaceRepo.NewPGWorkspaceRepository(pgPool)
+	workspaceUseCase := workspaceUse.NewWorkspaceUseCase(pgWorkspaceRepo)
+
+	// 8. Setup Gin Router
 	if appEnv == "production" {
 		gin.SetMode(gin.ReleaseMode)
 	}
@@ -116,14 +123,35 @@ func main() {
 		})
 	})
 
+	// API Documentation (Scalar)
+	router.Static("/openapi", "./docs/api")
+	router.GET("/docs/:module", func(c *gin.Context) {
+		module := c.Param("module")
+		html := fmt.Sprintf(`<!doctype html>
+<html>
+  <head>
+    <title>%s API Reference</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+  </head>
+  <body>
+    <!-- Setup Scalar -->
+    <script id="api-reference" data-url="/openapi/%s.yaml"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference"></script>
+  </body>
+</html>`, module, module)
+		c.Data(http.StatusOK, "text/html; charset=utf-8", []byte(html))
+	})
+
 	// API Version Group
 	apiV1 := router.Group("/api/v1")
 
-	// 8. Register Endpoints
+	// 9. Register Endpoints
 	authDeliveryHttp.NewAuthHandler(apiV1, authUseCase, jwtSecret)
 	userDeliveryHttp.NewUserHandler(apiV1, userUseCase, jwtSecret)
+	workspaceDeliveryHttp.NewWorkspaceHandler(apiV1, workspaceUseCase, jwtSecret)
 
-	// 9. Start HTTP Server with Graceful Shutdown
+	// 10. Start HTTP Server with Graceful Shutdown
 	srv := &http.Server{
 		Addr:    ":" + port,
 		Handler: router,

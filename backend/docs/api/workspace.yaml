@@ -1,0 +1,146 @@
+openapi: 3.0.3
+info:
+  title: Workspace API
+  description: Multi-tenancy Workspace management.
+  version: 1.0.0
+servers:
+  - url: http://localhost:8080/api/v1
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    WorkspaceResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        slug:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+    WorkspaceMemberResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        role:
+          type: string
+          enum: [owner, admin, editor, viewer]
+        status:
+          type: string
+          enum: [active, invited, disabled]
+        joined_at:
+          type: string
+          format: date-time
+paths:
+  /workspaces:
+    post:
+      tags:
+        - Workspaces
+      summary: Create a new workspace
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+              properties:
+                name:
+                  type: string
+                  minLength: 2
+                  maxLength: 255
+      responses:
+        '201':
+          description: Workspace created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/WorkspaceResponse'
+  /workspaces/{id}:
+    get:
+      tags:
+        - Workspaces
+      summary: Get workspace details
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Workspace details retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      workspace:
+                        $ref: '#/components/schemas/WorkspaceResponse'
+                      members:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/WorkspaceMemberResponse'
+  /workspaces/{id}/members:
+    post:
+      tags:
+        - Workspaces
+      summary: Add a member to the workspace
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - user_id
+                - role
+              properties:
+                user_id:
+                  type: string
+                  format: uuid
+                role:
+                  type: string
+                  enum: [owner, admin, editor, viewer]
+      responses:
+        '201':
+          description: Member added successfully
