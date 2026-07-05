@@ -3,11 +3,12 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
-import { Settings, Activity, Users, Zap } from "lucide-react";
+import { Settings, Activity, Users, Zap, Layers } from "lucide-react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
+  { href: "/dashboard/workspaces", label: "Workspaces", icon: Layers },
   { href: "/dashboard/workflows", label: "Workflows", icon: Zap },
   { href: "/dashboard/analytics", label: "Analytics", icon: Activity },
   { href: "/dashboard/users", label: "Users", icon: Users },
@@ -45,17 +46,17 @@ export function Sidebar() {
                   transition={{ type: "spring", stiffness: 300, damping: 30 }}
                 />
               )}
-              
-              <Icon 
-                size={18} 
+
+              <Icon
+                size={18}
                 className={cn(
-                  "relative z-10 transition-colors", 
+                  "relative z-10 transition-colors",
                   isActive ? "text-primary" : "text-muted-foreground group-hover:text-foreground"
-                )} 
+                )}
               />
-              <span 
+              <span
                 className={cn(
-                  "relative z-10 transition-colors", 
+                  "relative z-10 transition-colors",
                   isActive ? "text-foreground font-semibold" : "text-muted-foreground group-hover:text-foreground"
                 )}
               >
