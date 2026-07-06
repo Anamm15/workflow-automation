@@ -47,7 +47,7 @@ func (u *userUseCase) UpdateProfile(ctx context.Context, accountID uuid.UUID, na
 func (u *userUseCase) CreateUserForAccount(ctx context.Context, accountID uuid.UUID, email, name, timezone string) error {
 	now := time.Now()
 	user := &domain.User{
-		ID:        uuid.New(),
+		ID:        accountID,
 		AccountID: accountID,
 		Name:      name,
 		Timezone:  timezone,

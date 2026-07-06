@@ -37,9 +37,9 @@ api.interceptors.response.use(
     const originalRequest = error.config;
 
     // Prevent infinite loops on auth routes
-    const isAuthEndpoint = originalRequest.url?.includes('/auth/login') || 
-                           originalRequest.url?.includes('/auth/refresh') || 
-                           originalRequest.url?.includes('/auth/logout');
+    const isAuthEndpoint = originalRequest.url?.includes('/auth/login') ||
+      originalRequest.url?.includes('/auth/refresh') ||
+      originalRequest.url?.includes('/auth/logout');
 
     // If the error is 401 and we haven't already tried to refresh and it's not an auth endpoint
     if (error.response?.status === 401 && !originalRequest._retry && !isAuthEndpoint) {
@@ -53,7 +53,7 @@ api.interceptors.response.use(
           { withCredentials: true }
         );
 
-        const newToken = res.data.token;
+        const newToken = res.data.data.access_token;
         setAccessToken(newToken);
 
         // Update the original request with the new token
@@ -62,10 +62,10 @@ api.interceptors.response.use(
       } catch (refreshError) {
         // Refresh failed (e.g., token expired or revoked)
         setAccessToken(null);
-        
+
         // Trigger a custom event so the AuthContext can log the user out
         window.dispatchEvent(new Event("auth:logout"));
-        
+
         return Promise.reject(refreshError);
       }
     }

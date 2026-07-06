@@ -6,9 +6,11 @@ import { useRouter, usePathname } from "next/navigation";
 import { toast } from "sonner";
 
 interface User {
-  id: string;
+  account_id: string;
   email: string;
-  isVerified: boolean;
+  username: string;
+  is_verified: boolean;
+  joined_at: string;
 }
 
 interface AuthContextType {
@@ -27,51 +29,61 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
 
-  const handleLogout = useCallback(async () => {
-    try {
-      await api.post("/auth/logout");
-    } catch (error) {
-      console.error("Logout error", error);
-    } finally {
-      setUser(null);
-      setAccessToken(null);
-      if (pathname.startsWith("/dashboard")) {
-        router.push("/auth");
+  const handleLogout = useCallback(async (skipApiCall = false) => {
+    if (skipApiCall !== true) {
+      try {
+        await api.post("/auth/logout");
+      } catch (error) {
+        console.error("Logout error", error);
       }
+    }
+    
+    setUser(null);
+    setAccessToken(null);
+    if (pathname.startsWith("/dashboard")) {
+      router.push("/auth");
     }
   }, [router, pathname]);
 
-  // Attempt to fetch current user (silent refresh) on mount
+  // Attempt to fetch current user on mount
   useEffect(() => {
+    let mounted = true;
     const fetchUser = async () => {
       try {
-        // We attempt to hit the /me endpoint. If the user has a valid refresh cookie,
-        // the Axios interceptor will catch the 401, refresh the token, and retry this request seamlessly.
         const response = await api.get("/auth/me");
-        setUser(response.data.user);
+        if (mounted) setUser(response.data.data);
       } catch (error) {
-        setUser(null);
-        setAccessToken(null);
-        // If we're on a protected route and failed to fetch user, kick them to auth
-        if (pathname.startsWith("/dashboard")) {
-          router.push("/auth");
+        if (mounted) {
+          setUser(null);
+          setAccessToken(null);
+          // If we're on a protected route and failed to fetch user, kick them to auth
+          if (window.location.pathname.startsWith("/dashboard")) {
+            router.push("/auth");
+          }
         }
       } finally {
-        setIsLoading(false);
+        if (mounted) setIsLoading(false);
       }
     };
 
     fetchUser();
+    
+    return () => { mounted = false; };
+  }, [router]);
 
-    // Listen for custom logout event dispatched from api.ts interceptor
+  // Listen for custom logout event dispatched from api.ts interceptor
+  useEffect(() => {
     const handleAuthLogoutEvent = () => {
-      toast.error("Session expired. Please log in again.");
-      handleLogout();
+      // Avoid spamming toasts if we are already unauthenticated
+      if (user !== null) {
+        toast.error("Session expired. Please log in again.");
+      }
+      handleLogout(true);
     };
 
     window.addEventListener("auth:logout", handleAuthLogoutEvent);
     return () => window.removeEventListener("auth:logout", handleAuthLogoutEvent);
-  }, [handleLogout, pathname, router]);
+  }, [handleLogout, user]);
 
   const login = (token: string, userData: User) => {
     setAccessToken(token);

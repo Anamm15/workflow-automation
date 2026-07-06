@@ -48,7 +48,7 @@ func (h *AuthHandler) setRefreshCookie(c *gin.Context, token string) {
 		RefreshCookieName,
 		token,
 		int(7*24*3600), // 7 days in seconds
-		"/auth/refresh", // restrict path
+		"/api/v1/auth/refresh", // restrict path
 		"",              // domain
 		true,            // Secure (HTTPS only)
 		true,            // HttpOnly
@@ -58,7 +58,7 @@ func (h *AuthHandler) setRefreshCookie(c *gin.Context, token string) {
 }
 
 func (h *AuthHandler) clearRefreshCookie(c *gin.Context) {
-	c.SetCookie(RefreshCookieName, "", -1, "/auth/refresh", "", true, true)
+	c.SetCookie(RefreshCookieName, "", -1, "/api/v1/auth/refresh", "", true, true)
 }
 
 func (h *AuthHandler) Register(c *gin.Context) {

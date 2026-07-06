@@ -23,6 +23,7 @@ func NewWorkspaceHandler(r *gin.RouterGroup, uc domain.WorkspaceUseCase, jwtSecr
 		protected.POST("", handler.CreateWorkspace)
 		protected.GET("/:id", handler.GetWorkspaceDetails)
 		protected.POST("/:id/members", handler.AddMember)
+		protected.PUT("/:id/members/:userId", handler.UpdateMemberRole)
 	}
 }
 
@@ -63,11 +64,6 @@ func (h *WorkspaceHandler) GetWorkspaceDetails(c *gin.Context) {
 		return
 	}
 
-	// Note: in a real application, you'd also want to verify the requesting user
-	// is actually a member of this workspace before returning details. 
-	// We assume standard zero-trust requires authorization here, but sticking to 
-	// PRD requirements for now.
-	
 	ws, members, err := h.usecase.GetWorkspaceDetails(c.Request.Context(), workspaceID)
 	if err != nil {
 		if errors.Is(err, domain.ErrWorkspaceNotFound) {
@@ -90,11 +86,14 @@ func (h *WorkspaceHandler) GetWorkspaceDetails(c *gin.Context) {
 
 	for _, m := range members {
 		res.Members = append(res.Members, WorkspaceMemberResponse{
-			ID:       m.ID,
-			UserID:   m.UserID,
-			Role:     m.Role,
-			Status:   m.Status,
-			JoinedAt: m.CreatedAt,
+			ID:           m.ID,
+			UserID:       m.UserID,
+			UserEmail:    m.UserEmail,
+			UserUsername: m.UserUsername,
+			UserAvatar:   m.UserAvatar,
+			Role:         m.Role,
+			Status:       m.Status,
+			JoinedAt:     m.CreatedAt,
 		})
 	}
 
@@ -132,4 +131,38 @@ func (h *WorkspaceHandler) AddMember(c *gin.Context) {
 	}
 
 	response.JSON(c, http.StatusCreated, "Member added successfully", nil, nil)
+}
+
+func (h *WorkspaceHandler) UpdateMemberRole(c *gin.Context) {
+	workspaceID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		response.Error(c, http.StatusBadRequest, "Invalid workspace ID", "INVALID_INPUT")
+		return
+	}
+
+	targetUserID, err := uuid.Parse(c.Param("userId"))
+	if err != nil {
+		response.Error(c, http.StatusBadRequest, "Invalid user ID", "INVALID_INPUT")
+		return
+	}
+
+	var req UpdateWorkspaceMemberRoleRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Error(c, http.StatusBadRequest, err.Error(), "INVALID_INPUT")
+		return
+	}
+
+	usrCtx, _ := middleware.GetUserContext(c)
+
+	err = h.usecase.UpdateWorkspaceMemberRole(c.Request.Context(), workspaceID, targetUserID, usrCtx.AccountID, req.Role)
+	if err != nil {
+		if errors.Is(err, domain.ErrUnauthorizedAction) {
+			response.Error(c, http.StatusForbidden, "You do not have permission to modify roles", "FORBIDDEN")
+			return
+		}
+		response.Error(c, http.StatusInternalServerError, "Failed to update member role", "INTERNAL_ERROR")
+		return
+	}
+
+	response.JSON(c, http.StatusOK, "Member role updated successfully", nil, nil)
 }

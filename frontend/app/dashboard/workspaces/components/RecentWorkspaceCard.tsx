@@ -1,15 +1,17 @@
 "use client";
 
 import { Workspace } from "../data/mockData";
-import { MoreHorizontal, ShieldAlert, Key, Edit, LogOut, Trash2 } from "lucide-react";
+import { MoreHorizontal, ShieldAlert, Key, Edit, LogOut, Trash2, UserPlus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
+import { ManageMembersModal } from "@/components/modals/ManageMembersModal";
 
 export function RecentWorkspaceCard({ workspace }: { workspace: Workspace }) {
   const [isHovered, setIsHovered] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [isManageOpen, setIsManageOpen] = useState(false);
 
   const getInitials = (name: string) => {
     return name
@@ -40,7 +42,7 @@ export function RecentWorkspaceCard({ workspace }: { workspace: Workspace }) {
   return (
     <Link
       href={`/workspace/${workspace.id}`}
-      className="relative flex flex-col justify-between overflow-hidden rounded-[20px] border border-black/5 dark:border-white/10 bg-card/40 p-6 backdrop-blur-xl transition-all duration-300 hover:bg-card/60 hover:border-black/10 dark:hover:border-white/20 hover:shadow-2xl hover:shadow-primary/5 min-h-[160px] group cursor-pointer"
+      className="relative flex flex-col justify-between overflow-visible rounded-[20px] border border-black/5 dark:border-white/10 bg-card/40 p-6 backdrop-blur-xl transition-all duration-300 hover:bg-card/60 hover:border-black/10 dark:hover:border-white/20 hover:shadow-2xl hover:shadow-primary/5 min-h-[160px] group cursor-pointer"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => {
         setIsHovered(false);
@@ -88,8 +90,17 @@ export function RecentWorkspaceCard({ workspace }: { workspace: Workspace }) {
                     initial={{ opacity: 0, y: 10, scale: 0.95 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                    className="absolute right-0 top-full mt-2 w-40 rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-[#1a1b23] p-1.5 shadow-2xl z-50 backdrop-blur-3xl"
+                    className="absolute right-0 top-full mt-2 w-48 rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-[#1a1b23] p-1.5 shadow-2xl z-50 backdrop-blur-3xl"
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
                   >
+                    {(workspace.role === "owner" || workspace.role === "admin") && (
+                      <div 
+                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); setIsManageOpen(true); setMenuOpen(false); }}
+                        className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-sm text-zinc-700 dark:text-zinc-300 hover:bg-black/5 dark:hover:bg-white/5 hover:text-foreground cursor-pointer"
+                      >
+                        <UserPlus size={14} /> Manage Members
+                      </div>
+                    )}
                     <div className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-sm text-zinc-700 dark:text-zinc-300 hover:bg-black/5 dark:hover:bg-white/5 hover:text-foreground cursor-not-allowed">
                       <Edit size={14} /> Edit details
                     </div>
@@ -129,6 +140,17 @@ export function RecentWorkspaceCard({ workspace }: { workspace: Workspace }) {
         </div>
         <p className="text-xs text-zinc-500">Last active {workspace.lastActive}</p>
       </div>
+
+      {/* Render Modal Outside the Link block but visually fine because it's fixed position */}
+      {isManageOpen && (
+        <div onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
+          <ManageMembersModal
+            isOpen={isManageOpen}
+            onClose={() => setIsManageOpen(false)}
+            workspaceId={workspace.id}
+          />
+        </div>
+      )}
     </Link>
   );
 }

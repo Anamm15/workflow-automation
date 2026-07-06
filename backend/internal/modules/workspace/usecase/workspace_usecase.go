@@ -91,7 +91,31 @@ func (u *workspaceUseCase) AddWorkspaceMember(ctx context.Context, workspaceID, 
 	return nil
 }
 
-func (u *workspaceUseCase) GetWorkspaceDetails(ctx context.Context, workspaceID uuid.UUID) (*domain.Workspace, []*domain.WorkspaceMember, error) {
+func (u *workspaceUseCase) UpdateWorkspaceMemberRole(ctx context.Context, workspaceID, targetUserID, actionUserID uuid.UUID, role domain.WorkspaceRole) error {
+	// 1. Verify actionUserID has permission (must be owner or admin)
+	actionMember, err := u.repo.GetMember(ctx, workspaceID, actionUserID)
+	if err != nil {
+		return fmt.Errorf("checking authorization: %w", err)
+	}
+
+	if actionMember.Role != domain.RoleOwner && actionMember.Role != domain.RoleAdmin {
+		return domain.ErrUnauthorizedAction
+	}
+
+	// 2. Prevent changing owner role if you're not an owner
+	if actionMember.Role == domain.RoleAdmin && role == domain.RoleOwner {
+		return domain.ErrUnauthorizedAction
+	}
+
+	// 3. Update Member Role
+	if err := u.repo.UpdateMemberRole(ctx, workspaceID, targetUserID, role); err != nil {
+		return fmt.Errorf("updating member role: %w", err)
+	}
+
+	return nil
+}
+
+func (u *workspaceUseCase) GetWorkspaceDetails(ctx context.Context, workspaceID uuid.UUID) (*domain.Workspace, []*domain.WorkspaceMemberInfo, error) {
 	ws, err := u.repo.GetByID(ctx, workspaceID)
 	if err != nil {
 		return nil, nil, fmt.Errorf("getting workspace details: %w", err)

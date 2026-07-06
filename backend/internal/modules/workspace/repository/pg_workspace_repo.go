@@ -108,20 +108,30 @@ func (r *pgWorkspaceRepo) GetMember(ctx context.Context, workspaceID, userID uui
 	return &m, nil
 }
 
-func (r *pgWorkspaceRepo) ListMembers(ctx context.Context, workspaceID uuid.UUID, limit, offset int) ([]*domain.WorkspaceMember, error) {
-	query := `SELECT id, workspace_id, user_id, role, status, created_at, updated_at 
-			  FROM workspace_members WHERE workspace_id = $1 ORDER BY created_at DESC LIMIT $2 OFFSET $3`
+func (r *pgWorkspaceRepo) ListMembers(ctx context.Context, workspaceID uuid.UUID, limit, offset int) ([]*domain.WorkspaceMemberInfo, error) {
+	query := `
+		SELECT wm.id, wm.workspace_id, wm.user_id, wm.role, wm.status, wm.created_at, wm.updated_at,
+		       u.email, u.username, u.avatar_url
+		FROM workspace_members wm
+		JOIN users u ON wm.user_id = u.id
+		WHERE wm.workspace_id = $1 
+		ORDER BY wm.created_at DESC 
+		LIMIT $2 OFFSET $3`
+		
 	rows, err := r.db.Query(ctx, query, workspaceID, limit, offset)
 	if err != nil {
 		return nil, fmt.Errorf("querying workspace members: %w", err)
 	}
 	defer rows.Close()
 
-	var members []*domain.WorkspaceMember
+	var members []*domain.WorkspaceMemberInfo
 	for rows.Next() {
-		var m domain.WorkspaceMember
-		if err := rows.Scan(&m.ID, &m.WorkspaceID, &m.UserID, &m.Role, &m.Status, &m.CreatedAt, &m.UpdatedAt); err != nil {
-			return nil, fmt.Errorf("scanning workspace member: %w", err)
+		var m domain.WorkspaceMemberInfo
+		if err := rows.Scan(
+			&m.ID, &m.WorkspaceID, &m.UserID, &m.Role, &m.Status, &m.CreatedAt, &m.UpdatedAt,
+			&m.UserEmail, &m.UserUsername, &m.UserAvatar,
+		); err != nil {
+			return nil, fmt.Errorf("scanning workspace member info: %w", err)
 		}
 		members = append(members, &m)
 	}
@@ -131,4 +141,16 @@ func (r *pgWorkspaceRepo) ListMembers(ctx context.Context, workspaceID uuid.UUID
 	}
 
 	return members, nil
+}
+
+func (r *pgWorkspaceRepo) UpdateMemberRole(ctx context.Context, workspaceID, userID uuid.UUID, role domain.WorkspaceRole) error {
+	query := `UPDATE workspace_members SET role = $1, updated_at = NOW() WHERE workspace_id = $2 AND user_id = $3`
+	tag, err := r.db.Exec(ctx, query, role, workspaceID, userID)
+	if err != nil {
+		return fmt.Errorf("updating workspace member role: %w", err)
+	}
+	if tag.RowsAffected() == 0 {
+		return domain.ErrWorkspaceNotFound // Or member not found
+	}
+	return nil
 }

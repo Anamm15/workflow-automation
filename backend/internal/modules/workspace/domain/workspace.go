@@ -41,3 +41,10 @@ type WorkspaceMember struct {
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
 }
+
+type WorkspaceMemberInfo struct {
+	WorkspaceMember
+	UserEmail    string
+	UserUsername string
+	UserAvatar   *string
+}
