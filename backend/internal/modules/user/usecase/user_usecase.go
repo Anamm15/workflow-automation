@@ -57,3 +57,11 @@ func (u *userUseCase) CreateUserForAccount(ctx context.Context, accountID uuid.U
 
 	return u.repo.Create(ctx, user)
 }
+
+func (u *userUseCase) GetUserIDByAccountID(ctx context.Context, accountID uuid.UUID) (uuid.UUID, error) {
+	user, err := u.repo.GetByAccountID(ctx, accountID)
+	if err != nil {
+		return uuid.Nil, err
+	}
+	return user.ID, nil
+}

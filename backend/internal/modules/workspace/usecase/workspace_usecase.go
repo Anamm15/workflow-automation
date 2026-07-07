@@ -128,3 +128,12 @@ func (u *workspaceUseCase) GetWorkspaceDetails(ctx context.Context, workspaceID 
 
 	return ws, members, nil
 }
+
+func (u *workspaceUseCase) GetDashboardInfo(ctx context.Context, userID uuid.UUID) (*domain.DashboardInfo, error) {
+	info, err := u.repo.GetDashboardInfo(ctx, userID)
+	if err != nil {
+		return nil, fmt.Errorf("getting dashboard info: %w", err)
+	}
+
+	return info, nil
+}

@@ -10,14 +10,16 @@ import (
 // Define minimal payload as requested: sub, session_id, role, exp
 type JWTPayload struct {
 	Sub       uuid.UUID `json:"sub"`
+	Uid       uuid.UUID `json:"uid"`
 	SessionID uuid.UUID `json:"session_id"`
 	Role      string    `json:"role"`
 	jwt.RegisteredClaims
 }
 
-func GenerateJWT(accountID, sessionID uuid.UUID, role, secret string, d time.Duration) (string, error) {
+func GenerateJWT(accountID, userID, sessionID uuid.UUID, role, secret string, d time.Duration) (string, error) {
 	claims := JWTPayload{
 		Sub:       accountID,
+		Uid:       userID,
 		SessionID: sessionID,
 		Role:      role,
 		RegisteredClaims: jwt.RegisteredClaims{

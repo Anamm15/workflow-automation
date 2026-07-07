@@ -1,15 +1,27 @@
-import { fetchRecentWorkspaces } from "../data/mockData";
+"use client";
+
+import { useDashboardInfo } from "../hooks/useWorkspaceApi";
 import { RecentWorkspaceCard } from "./RecentWorkspaceCard";
 
-export async function RecentWorkspaces() {
-  const workspaces = await fetchRecentWorkspaces();
+export function RecentWorkspaces() {
+  const { data, isLoading, isError } = useDashboardInfo();
+
+  if (isLoading) {
+    return <RecentWorkspacesSkeleton />;
+  }
+
+  if (isError || !data || data.recent_workspaces.length === 0) {
+    return null; // Or show empty state
+  }
+
+  const workspaces = data.recent_workspaces;
 
   return (
     <div className="mb-10">
       <h2 className="text-xl font-semibold text-foreground mb-4">Jump back in</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {workspaces.map((workspace) => (
-          <RecentWorkspaceCard key={workspace.id} workspace={workspace} />
+          <RecentWorkspaceCard key={workspace.id} workspace={workspace as any} />
         ))}
       </div>
     </div>

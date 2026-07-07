@@ -111,7 +111,12 @@ func (u *authUseCase) Login(ctx context.Context, email, password, userAgent, ipA
 		return nil, err
 	}
 
-	accessToken, err := util.GenerateJWT(account.ID, sessionID, "user", u.jwtSecret, AccessTokenExpiry)
+	userID, err := u.userFac.GetUserIDByAccountID(ctx, account.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	accessToken, err := util.GenerateJWT(account.ID, userID, sessionID, "user", u.jwtSecret, AccessTokenExpiry)
 	if err != nil {
 		return nil, err
 	}
@@ -170,7 +175,12 @@ func (u *authUseCase) RefreshToken(ctx context.Context, oldRefreshTokenPlain, us
 		return nil, err
 	}
 
-	accessToken, err := util.GenerateJWT(session.AccountID, session.ID, "user", u.jwtSecret, AccessTokenExpiry)
+	userID, err := u.userFac.GetUserIDByAccountID(ctx, session.AccountID)
+	if err != nil {
+		return nil, err
+	}
+
+	accessToken, err := util.GenerateJWT(session.AccountID, userID, session.ID, "user", u.jwtSecret, AccessTokenExpiry)
 	if err != nil {
 		return nil, err
 	}

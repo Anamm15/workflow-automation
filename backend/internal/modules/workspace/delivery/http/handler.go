@@ -20,6 +20,7 @@ func NewWorkspaceHandler(r *gin.RouterGroup, uc domain.WorkspaceUseCase, jwtSecr
 
 	protected := r.Group("/workspaces").Use(middleware.JWTAuth(jwtSecret))
 	{
+		protected.GET("/dashboard", handler.GetDashboardInfo)
 		protected.POST("", handler.CreateWorkspace)
 		protected.GET("/:id", handler.GetWorkspaceDetails)
 		protected.POST("/:id/members", handler.AddMember)
@@ -36,7 +37,7 @@ func (h *WorkspaceHandler) CreateWorkspace(c *gin.Context) {
 
 	usrCtx, _ := middleware.GetUserContext(c)
 
-	ws, err := h.usecase.CreateWorkspace(c.Request.Context(), req.Name, usrCtx.AccountID)
+	ws, err := h.usecase.CreateWorkspace(c.Request.Context(), req.Name, usrCtx.UserID)
 	if err != nil {
 		if errors.Is(err, domain.ErrInvalidInput) {
 			response.Error(c, http.StatusBadRequest, err.Error(), "INVALID_INPUT")
@@ -116,7 +117,7 @@ func (h *WorkspaceHandler) AddMember(c *gin.Context) {
 
 	usrCtx, _ := middleware.GetUserContext(c)
 
-	err = h.usecase.AddWorkspaceMember(c.Request.Context(), workspaceID, req.UserID, usrCtx.AccountID, req.Role)
+	err = h.usecase.AddWorkspaceMember(c.Request.Context(), workspaceID, req.UserID, usrCtx.UserID, req.Role)
 	if err != nil {
 		if errors.Is(err, domain.ErrUnauthorizedAction) {
 			response.Error(c, http.StatusForbidden, "You do not have permission to add members", "FORBIDDEN")
@@ -154,7 +155,7 @@ func (h *WorkspaceHandler) UpdateMemberRole(c *gin.Context) {
 
 	usrCtx, _ := middleware.GetUserContext(c)
 
-	err = h.usecase.UpdateWorkspaceMemberRole(c.Request.Context(), workspaceID, targetUserID, usrCtx.AccountID, req.Role)
+	err = h.usecase.UpdateWorkspaceMemberRole(c.Request.Context(), workspaceID, targetUserID, usrCtx.UserID, req.Role)
 	if err != nil {
 		if errors.Is(err, domain.ErrUnauthorizedAction) {
 			response.Error(c, http.StatusForbidden, "You do not have permission to modify roles", "FORBIDDEN")
@@ -165,4 +166,50 @@ func (h *WorkspaceHandler) UpdateMemberRole(c *gin.Context) {
 	}
 
 	response.JSON(c, http.StatusOK, "Member role updated successfully", nil, nil)
+}
+
+func (h *WorkspaceHandler) GetDashboardInfo(c *gin.Context) {
+	usrCtx, _ := middleware.GetUserContext(c)
+
+	info, err := h.usecase.GetDashboardInfo(c.Request.Context(), usrCtx.UserID)
+	if err != nil {
+		response.Error(c, http.StatusInternalServerError, "Failed to fetch dashboard info", "INTERNAL_ERROR")
+		return
+	}
+
+	res := DashboardInfoResponse{
+		Metrics: DashboardMetricsResponse{
+			TotalWorkspaces: info.Metrics.TotalWorkspaces,
+			ActiveMembers:   info.Metrics.ActiveMembers,
+			PendingInvites:  info.Metrics.PendingInvites,
+			ResourceUsage:   info.Metrics.ResourceUsage,
+		},
+		RecentWorkspaces: make([]DashboardWorkspaceResponse, 0, len(info.RecentWorkspaces)),
+		RecentActivities: make([]WorkspaceActivityResponse, 0, len(info.RecentActivities)),
+	}
+
+	for _, w := range info.RecentWorkspaces {
+		res.RecentWorkspaces = append(res.RecentWorkspaces, DashboardWorkspaceResponse{
+			ID:           w.ID,
+			Name:         w.Name,
+			Slug:         w.Slug,
+			Role:         w.Role,
+			MembersCount: w.MembersCount,
+			CreatedAt:    w.CreatedAt,
+		})
+	}
+
+	for _, a := range info.RecentActivities {
+		res.RecentActivities = append(res.RecentActivities, WorkspaceActivityResponse{
+			ID:            a.ID,
+			WorkspaceID:   a.WorkspaceID,
+			WorkspaceName: a.WorkspaceName,
+			UserID:        a.UserID,
+			UserName:      a.UserName,
+			Action:        a.Action,
+			CreatedAt:     a.CreatedAt,
+		})
+	}
+
+	response.JSON(c, http.StatusOK, "Dashboard info fetched", res, nil)
 }

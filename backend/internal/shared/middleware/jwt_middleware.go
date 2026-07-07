@@ -13,6 +13,7 @@ import (
 
 type UserContext struct {
 	AccountID uuid.UUID
+	UserID    uuid.UUID
 	SessionID uuid.UUID
 	Role      string
 }
@@ -52,18 +53,21 @@ func JWTAuth(secret string) gin.HandlerFunc {
 		}
 
 		accIDStr, ok := claims["sub"].(string)
+		uidStr, ok3 := claims["uid"].(string)
 		sessIDStr, ok2 := claims["session_id"].(string)
-		if !ok || !ok2 {
+		if !ok || !ok2 || !ok3 {
 			response.Error(c, http.StatusUnauthorized, "invalid token payload", "UNAUTHORIZED")
 			return
 		}
 
 		accID, _ := uuid.Parse(accIDStr)
+		uid, _ := uuid.Parse(uidStr)
 		sessID, _ := uuid.Parse(sessIDStr)
 		role, _ := claims["role"].(string)
 
 		c.Set("user", UserContext{
 			AccountID: accID,
+			UserID:    uid,
 			SessionID: sessID,
 			Role:      role,
 		})

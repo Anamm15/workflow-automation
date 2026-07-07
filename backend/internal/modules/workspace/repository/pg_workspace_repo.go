@@ -111,9 +111,10 @@ func (r *pgWorkspaceRepo) GetMember(ctx context.Context, workspaceID, userID uui
 func (r *pgWorkspaceRepo) ListMembers(ctx context.Context, workspaceID uuid.UUID, limit, offset int) ([]*domain.WorkspaceMemberInfo, error) {
 	query := `
 		SELECT wm.id, wm.workspace_id, wm.user_id, wm.role, wm.status, wm.created_at, wm.updated_at,
-		       u.email, u.username, u.avatar_url
+		       a.email, a.username, u.avatar_url
 		FROM workspace_members wm
 		JOIN users u ON wm.user_id = u.id
+		JOIN accounts a ON u.account_id = a.id
 		WHERE wm.workspace_id = $1 
 		ORDER BY wm.created_at DESC 
 		LIMIT $2 OFFSET $3`
@@ -153,4 +154,94 @@ func (r *pgWorkspaceRepo) UpdateMemberRole(ctx context.Context, workspaceID, use
 		return domain.ErrWorkspaceNotFound // Or member not found
 	}
 	return nil
+}
+
+func (r *pgWorkspaceRepo) GetDashboardInfo(ctx context.Context, userID uuid.UUID) (*domain.DashboardInfo, error) {
+	var info domain.DashboardInfo
+	info.RecentWorkspaces = make([]domain.DashboardWorkspace, 0)
+	info.RecentActivities = make([]domain.WorkspaceActivity, 0)
+
+	// 1. Total workspaces
+	err := r.db.QueryRow(ctx, "SELECT COUNT(*) FROM workspace_members WHERE user_id = $1 AND status != 'disabled'", userID).Scan(&info.Metrics.TotalWorkspaces)
+	if err != nil {
+		return nil, fmt.Errorf("counting total workspaces: %w", err)
+	}
+
+	// 2. Active members across all user's workspaces
+	err = r.db.QueryRow(ctx, `
+		SELECT COUNT(DISTINCT wm.user_id) 
+		FROM workspace_members wm 
+		WHERE wm.workspace_id IN (
+			SELECT workspace_id FROM workspace_members WHERE user_id = $1 AND status != 'disabled'
+		) AND wm.status = 'active'
+	`, userID).Scan(&info.Metrics.ActiveMembers)
+	if err != nil {
+		return nil, fmt.Errorf("counting active members: %w", err)
+	}
+
+	// 3. Pending invites
+	err = r.db.QueryRow(ctx, "SELECT COUNT(*) FROM workspace_members WHERE user_id = $1 AND status = 'invited'", userID).Scan(&info.Metrics.PendingInvites)
+	if err != nil {
+		return nil, fmt.Errorf("counting pending invites: %w", err)
+	}
+
+	info.Metrics.ResourceUsage = 64 // Mock data for now since we don't have resource usage
+
+	// 4. Recent Workspaces
+	wsQuery := `
+		SELECT w.id, w.name, w.slug, w.owner_user_id, w.created_at, w.updated_at, wm.role,
+		       (SELECT COUNT(*) FROM workspace_members WHERE workspace_id = w.id AND status != 'disabled') as members_count
+		FROM workspaces w
+		JOIN workspace_members wm ON w.id = wm.workspace_id
+		WHERE wm.user_id = $1 AND wm.status != 'disabled'
+		ORDER BY w.updated_at DESC
+		LIMIT 3
+	`
+	wsRows, err := r.db.Query(ctx, wsQuery, userID)
+	if err != nil {
+		return nil, fmt.Errorf("querying recent workspaces: %w", err)
+	}
+	defer wsRows.Close()
+
+	for wsRows.Next() {
+		var w domain.DashboardWorkspace
+		if err := wsRows.Scan(&w.ID, &w.Name, &w.Slug, &w.OwnerUserID, &w.CreatedAt, &w.UpdatedAt, &w.Role, &w.MembersCount); err != nil {
+			return nil, fmt.Errorf("scanning recent workspace: %w", err)
+		}
+		info.RecentWorkspaces = append(info.RecentWorkspaces, w)
+	}
+	if err := wsRows.Err(); err != nil {
+		return nil, fmt.Errorf("iterating recent workspaces: %w", err)
+	}
+
+	// 5. Recent Activities
+	actQuery := `
+		SELECT wa.id, wa.workspace_id, w.name, wa.user_id, u.name, wa.action, wa.created_at
+		FROM workspace_activities wa
+		JOIN workspaces w ON wa.workspace_id = w.id
+		JOIN users u ON wa.user_id = u.id
+		WHERE wa.workspace_id IN (
+			SELECT workspace_id FROM workspace_members WHERE user_id = $1 AND status != 'disabled'
+		)
+		ORDER BY wa.created_at DESC
+		LIMIT 4
+	`
+	actRows, err := r.db.Query(ctx, actQuery, userID)
+	if err != nil {
+		return nil, fmt.Errorf("querying recent activities: %w", err)
+	}
+	defer actRows.Close()
+
+	for actRows.Next() {
+		var a domain.WorkspaceActivity
+		if err := actRows.Scan(&a.ID, &a.WorkspaceID, &a.WorkspaceName, &a.UserID, &a.UserName, &a.Action, &a.CreatedAt); err != nil {
+			return nil, fmt.Errorf("scanning recent activity: %w", err)
+		}
+		info.RecentActivities = append(info.RecentActivities, a)
+	}
+	if err := actRows.Err(); err != nil {
+		return nil, fmt.Errorf("iterating recent activities: %w", err)
+	}
+
+	return &info, nil
 }

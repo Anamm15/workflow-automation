@@ -57,4 +57,5 @@ type AuthUseCase interface {
 // UserProfileFacade is used to communicate with the User module
 type UserProfileFacade interface {
 	CreateUserForAccount(ctx context.Context, accountID uuid.UUID, email, name, timezone string) error
+	GetUserIDByAccountID(ctx context.Context, accountID uuid.UUID) (uuid.UUID, error)
 }

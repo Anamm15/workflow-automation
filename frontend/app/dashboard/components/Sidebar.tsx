@@ -3,9 +3,10 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
-import { Settings, Activity, Users, Zap, Layers } from "lucide-react";
+import { Settings, Activity, Users, Zap, Layers, LogOut } from "lucide-react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/contexts/AuthContext";
 
 const NAV_ITEMS = [
   { href: "/dashboard/workspaces", label: "Workspaces", icon: Layers },
@@ -17,6 +18,7 @@ const NAV_ITEMS = [
 
 export function Sidebar() {
   const pathname = usePathname();
+  const { user, logout } = useAuth();
 
   return (
     <aside className="w-64 h-screen border-r border-border bg-background flex flex-col py-6 transition-colors">
@@ -67,14 +69,23 @@ export function Sidebar() {
         })}
       </nav>
 
-      <div className="px-6 pt-4 border-t border-border">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-muted border border-border" />
-          <div className="flex flex-col">
-            <span className="text-sm text-foreground font-medium leading-none">Admin User</span>
-            <span className="text-xs text-muted-foreground mt-1">admin@nexusflow.com</span>
+      <div className="px-6 pt-4 border-t border-border flex items-center justify-between">
+        <div className="flex items-center gap-3 overflow-hidden">
+          <div className="w-8 h-8 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold text-xs shrink-0">
+            {user?.username ? user.username.substring(0, 2).toUpperCase() : "?"}
+          </div>
+          <div className="flex flex-col truncate">
+            <span className="text-sm text-foreground font-medium leading-none truncate">{user?.username || "Guest"}</span>
+            <span className="text-xs text-muted-foreground mt-1 truncate">{user?.email || "Not logged in"}</span>
           </div>
         </div>
+        <button
+          onClick={() => logout()}
+          className="p-2 text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"
+          title="Logout"
+        >
+          <LogOut size={18} />
+        </button>
       </div>
     </aside>
   );

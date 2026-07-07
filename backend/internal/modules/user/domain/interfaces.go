@@ -24,4 +24,5 @@ type UserUseCase interface {
 // Used by the Auth module to trigger user profile creation upon registration.
 type UserFacade interface {
 	CreateUserForAccount(ctx context.Context, accountID uuid.UUID, email, name, timezone string) error
+	GetUserIDByAccountID(ctx context.Context, accountID uuid.UUID) (uuid.UUID, error)
 }

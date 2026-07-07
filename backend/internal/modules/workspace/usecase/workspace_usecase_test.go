@@ -53,14 +53,29 @@ func (m *mockWorkspaceRepo) GetMember(ctx context.Context, workspaceID, userID u
 	return nil, errors.New("member not found")
 }
 
-func (m *mockWorkspaceRepo) ListMembers(ctx context.Context, workspaceID uuid.UUID, limit, offset int) ([]*domain.WorkspaceMember, error) {
-	var res []*domain.WorkspaceMember
+func (m *mockWorkspaceRepo) ListMembers(ctx context.Context, workspaceID uuid.UUID, limit, offset int) ([]*domain.WorkspaceMemberInfo, error) {
+	var res []*domain.WorkspaceMemberInfo
 	for _, mem := range m.members {
 		if mem.WorkspaceID == workspaceID {
-			res = append(res, mem)
+			res = append(res, &domain.WorkspaceMemberInfo{
+				WorkspaceMember: *mem,
+			})
 		}
 	}
 	return res, nil
+}
+
+func (m *mockWorkspaceRepo) UpdateMemberRole(ctx context.Context, workspaceID, userID uuid.UUID, role domain.WorkspaceRole) error {
+	key := workspaceID.String() + "_" + userID.String()
+	if mem, ok := m.members[key]; ok {
+		mem.Role = role
+		return nil
+	}
+	return errors.New("member not found")
+}
+
+func (m *mockWorkspaceRepo) GetDashboardInfo(ctx context.Context, userID uuid.UUID) (*domain.DashboardInfo, error) {
+	return &domain.DashboardInfo{}, nil
 }
 
 func TestWorkspaceUseCase_CreateWorkspace(t *testing.T) {

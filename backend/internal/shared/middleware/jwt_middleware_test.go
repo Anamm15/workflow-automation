@@ -23,12 +23,14 @@ func TestJWTAuthMiddleware(t *testing.T) {
 	})
 
 	// Generate valid token
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+	claims := jwt.MapClaims{
 		"sub":        uuid.New().String(),
+		"uid":        uuid.New().String(),
 		"session_id": uuid.New().String(),
 		"role":       "user",
 		"exp":        time.Now().Add(time.Hour).Unix(),
-	})
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	tokenString, _ := token.SignedString([]byte(secret))
 
 	t.Run("Valid Token", func(t *testing.T) {

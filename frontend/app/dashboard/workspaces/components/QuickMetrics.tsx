@@ -1,6 +1,8 @@
-import { fetchMetrics } from "../data/mockData";
+"use client";
+
 import { Layers, Users, Mailbox, Activity } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useDashboardInfo } from "../hooks/useWorkspaceApi";
 
 function MetricCard({
   title,
@@ -31,15 +33,32 @@ function MetricCard({
   );
 }
 
-export async function QuickMetrics() {
-  const metrics = await fetchMetrics();
+export function QuickMetrics() {
+  const { data, isLoading, isError } = useDashboardInfo();
+
+  if (isLoading) {
+    return <QuickMetricsSkeleton />;
+  }
+
+  if (isError || !data) {
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
+        <MetricCard title="Total Workspaces" value="-" icon={Layers} />
+        <MetricCard title="Active Members" value="-" icon={Users} />
+        <MetricCard title="Pending Invites" value="-" icon={Mailbox} />
+        <MetricCard title="Resource Usage" value="-" icon={Activity} />
+      </div>
+    );
+  }
+
+  const metrics = data.metrics;
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
-      <MetricCard title="Total Workspaces" value={metrics.totalWorkspaces} icon={Layers} />
-      <MetricCard title="Active Members" value={metrics.activeMembers} icon={Users} />
-      <MetricCard title="Pending Invites" value={metrics.pendingInvites} icon={Mailbox} />
-      <MetricCard title="Resource Usage" value={`${metrics.resourceUsage}%`} icon={Activity} />
+      <MetricCard title="Total Workspaces" value={metrics.total_workspaces} icon={Layers} />
+      <MetricCard title="Active Members" value={metrics.active_members} icon={Users} />
+      <MetricCard title="Pending Invites" value={metrics.pending_invites} icon={Mailbox} />
+      <MetricCard title="Resource Usage" value={`${metrics.resource_usage}%`} icon={Activity} />
     </div>
   );
 }

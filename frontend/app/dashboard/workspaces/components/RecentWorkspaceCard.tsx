@@ -1,12 +1,14 @@
 "use client";
 
-import { Workspace } from "../data/mockData";
-import { MoreHorizontal, ShieldAlert, Key, Edit, LogOut, Trash2, UserPlus } from "lucide-react";
+import { Workspace } from "../hooks/useWorkspaceApi";
+import { MoreHorizontal, ShieldAlert, Key, Edit, LogOut, Trash2, UserPlus, Eye } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { ManageMembersModal } from "@/components/modals/ManageMembersModal";
+
+import { formatDistanceToNow, parseISO } from "date-fns";
 
 export function RecentWorkspaceCard({ workspace }: { workspace: Workspace }) {
   const [isHovered, setIsHovered] = useState(false);
@@ -28,6 +30,10 @@ export function RecentWorkspaceCard({ workspace }: { workspace: Workspace }) {
         return <Key size={14} className="text-amber-500" />;
       case "admin":
         return <ShieldAlert size={14} className="text-emerald-500" />;
+      case "editor":
+        return <Edit size={14} className="text-blue-500" />;
+      case "viewer":
+        return <Eye size={14} className="text-zinc-500" />;
       default:
         return null;
     }
@@ -59,9 +65,9 @@ export function RecentWorkspaceCard({ workspace }: { workspace: Workspace }) {
               {workspace.name}
             </h3>
             <div className="flex items-center gap-1.5 mt-0.5">
-              {getRoleIcon(workspace.role)}
+              {getRoleIcon(workspace.role || "member")}
               <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400 capitalize">
-                {workspace.role}
+                {workspace.role || "member"}
               </span>
             </div>
           </div>
@@ -94,7 +100,7 @@ export function RecentWorkspaceCard({ workspace }: { workspace: Workspace }) {
                     onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
                   >
                     {(workspace.role === "owner" || workspace.role === "admin") && (
-                      <div 
+                      <div
                         onClick={(e) => { e.preventDefault(); e.stopPropagation(); setIsManageOpen(true); setMenuOpen(false); }}
                         className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-sm text-zinc-700 dark:text-zinc-300 hover:bg-black/5 dark:hover:bg-white/5 hover:text-foreground cursor-pointer"
                       >
@@ -123,7 +129,7 @@ export function RecentWorkspaceCard({ workspace }: { workspace: Workspace }) {
 
       <div className="flex items-center justify-between mt-6">
         <div className="flex -space-x-2">
-          {[...Array(Math.min(4, workspace.membersCount))].map((_, i) => (
+          {[...Array(Math.min(4, workspace.members_count || 1))].map((_, i) => (
             <div
               key={i}
               className="inline-block h-8 w-8 rounded-full ring-2 ring-white dark:ring-[#0a0a0b] bg-zinc-200 dark:bg-zinc-800"
@@ -132,13 +138,13 @@ export function RecentWorkspaceCard({ workspace }: { workspace: Workspace }) {
               }}
             />
           ))}
-          {workspace.membersCount > 4 && (
+          {(workspace.members_count || 1) > 4 && (
             <div className="flex h-8 w-8 items-center justify-center rounded-full ring-2 ring-white dark:ring-[#0a0a0b] bg-zinc-200 dark:bg-zinc-800 text-xs font-medium text-zinc-600 dark:text-zinc-300">
-              +{workspace.membersCount - 4}
+              +{(workspace.members_count || 1) - 4}
             </div>
           )}
         </div>
-        <p className="text-xs text-zinc-500">Last active {workspace.lastActive}</p>
+        <p className="text-xs text-zinc-500">Last active {workspace.created_at ? formatDistanceToNow(parseISO(workspace.created_at), { addSuffix: true }) : "Recently"}</p>
       </div>
 
       {/* Render Modal Outside the Link block but visually fine because it's fixed position */}

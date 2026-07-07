@@ -48,3 +48,32 @@ type WorkspaceMemberInfo struct {
 	UserUsername string
 	UserAvatar   *string
 }
+
+type WorkspaceActivity struct {
+	ID            uuid.UUID
+	WorkspaceID   uuid.UUID
+	WorkspaceName string
+	UserID        uuid.UUID
+	UserName      string
+	Action        string
+	CreatedAt     time.Time
+}
+
+type DashboardMetrics struct {
+	TotalWorkspaces int
+	ActiveMembers   int
+	PendingInvites  int
+	ResourceUsage   int
+}
+
+type DashboardWorkspace struct {
+	Workspace
+	Role         WorkspaceRole
+	MembersCount int
+}
+
+type DashboardInfo struct {
+	Metrics          DashboardMetrics
+	RecentWorkspaces []DashboardWorkspace
+	RecentActivities []WorkspaceActivity
+}

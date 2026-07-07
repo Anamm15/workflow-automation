@@ -6,6 +6,8 @@ export interface Workspace {
   name: string;
   slug: string;
   created_at: string;
+  role?: "owner" | "admin" | "editor" | "viewer";
+  members_count?: number;
 }
 
 export interface WorkspaceMember {
@@ -91,6 +93,39 @@ export function useUpdateMemberRole() {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["workspace", variables.workspaceId] });
+    },
+  });
+}
+
+export interface DashboardMetrics {
+  total_workspaces: number;
+  active_members: number;
+  pending_invites: number;
+  resource_usage: number;
+}
+
+export interface WorkspaceActivity {
+  id: string;
+  workspace_id: string;
+  workspace_name: string;
+  user_id: string;
+  user_name: string;
+  action: string;
+  created_at: string;
+}
+
+export interface DashboardInfo {
+  metrics: DashboardMetrics;
+  recent_workspaces: Workspace[];
+  recent_activities: WorkspaceActivity[];
+}
+
+export function useDashboardInfo() {
+  return useQuery({
+    queryKey: ["dashboard_info"],
+    queryFn: async () => {
+      const { data } = await api.get<{ data: DashboardInfo }>("/workspaces/dashboard");
+      return data.data;
     },
   });
 }

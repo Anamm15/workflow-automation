@@ -43,7 +43,72 @@ components:
         joined_at:
           type: string
           format: date-time
+    DashboardMetricsResponse:
+      type: object
+      properties:
+        total_workspaces:
+          type: integer
+        active_members:
+          type: integer
+        pending_invites:
+          type: integer
+        resource_usage:
+          type: integer
+    WorkspaceActivityResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        workspace_id:
+          type: string
+          format: uuid
+        workspace_name:
+          type: string
+        user_id:
+          type: string
+          format: uuid
+        user_name:
+          type: string
+        action:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+    DashboardInfoResponse:
+      type: object
+      properties:
+        metrics:
+          $ref: '#/components/schemas/DashboardMetricsResponse'
+        recent_workspaces:
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkspaceResponse'
+        recent_activities:
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkspaceActivityResponse'
 paths:
+  /workspaces/dashboard:
+    get:
+      tags:
+        - Workspaces
+      summary: Get workspace dashboard info
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Dashboard info retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/DashboardInfoResponse'
   /workspaces:
     post:
       tags:

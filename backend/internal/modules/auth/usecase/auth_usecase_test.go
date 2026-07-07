@@ -49,6 +49,12 @@ func (m *mockUserFacade) CreateUserForAccount(ctx context.Context, accountID uui
 	}
 	return nil
 }
+func (m *mockUserFacade) GetUserIDByAccountID(ctx context.Context, accountID uuid.UUID) (uuid.UUID, error) {
+	if m.shouldError {
+		return uuid.Nil, errors.New("mock error")
+	}
+	return accountID, nil // Just return the same UUID for the mock
+}
 
 type mockSessRepo struct {
 	sessions map[uuid.UUID]*domain.Session

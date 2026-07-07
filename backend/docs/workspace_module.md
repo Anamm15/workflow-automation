@@ -12,6 +12,7 @@ The Workspace module handles multi-tenancy for the Workflow Automation Platform.
   - `viewer`: Read-only access to the workspace assets.
 - **Unique Slugs**: Automatically generates URL-friendly unique slugs for workspaces by combining the workspace name and a portion of a UUID.
 - **Idempotency**: Prevents adding users to a workspace if they are already members.
+- **Dashboard Analytics & Activity Feed**: Aggregates total workspaces, active members, pending invites, and an activity feed of recent actions across workspaces the user belongs to.
 
 ## Architectural Principles (DDD Lite)
 - **Transaction Encapsulation**: Transactions (`pgx.Tx` or `sql.Tx`) never leak into the UseCase or Domain layers. Operations that modify multiple tables (e.g., creating a workspace and simultaneously adding the creator as an owner) use cohesive methods at the Repository layer (e.g., `CreateWithMember(ctx, workspace, member)`).
@@ -38,9 +39,18 @@ The module uses two core tables:
 - `updated_at` (TIMESTAMP)
 - *Constraint*: `UNIQUE(workspace_id, user_id)`
 
+### `workspace_activities`
+- `id` (UUID, Primary Key)
+- `workspace_id` (UUID, Foreign Key -> `workspaces(id)`, Cascade Delete)
+- `user_id` (UUID, Foreign Key -> `users(id)`, Cascade Delete)
+- `action` (VARCHAR, 255)
+- `created_at` (TIMESTAMP)
+
 ## Endpoints
 *(Detailed API specs can be viewed via the Scalar interactive documentation at `/docs/workspace`)*
 
+- **`GET /api/v1/workspaces/dashboard`**:
+  - Retrieves aggregated metrics, recent workspaces, and an activity feed for the authenticated user.
 - **`POST /api/v1/workspaces`**: 
   - Creates a new workspace.
   - Accepts `name`.
