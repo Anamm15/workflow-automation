@@ -13,14 +13,16 @@
   --color-error: var(--error);
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-  --animate-shake: shake 0.4s cubic-bezier(.36,.07,.19,.97) both;
+  --animate-shake: shake 0.4s cubic-bezier(.36, .07, .19, .97) both;
 }
 
 @layer base {
   :root {
-    --background: #fafafa;
+    --background: #f4f4f5;
+    /* Softer light background */
     --foreground: #09090b;
-    --primary: #006FEE; /* Unique Electric Blue */
+    --primary: #006FEE;
+    /* Unique Electric Blue */
     --primary-hover: #005BC4;
     --border: #e4e4e7;
     --card: #ffffff;
@@ -30,17 +32,21 @@
     --error: #ef4444;
   }
 
-  .dark, [data-theme='dark'] {
-    --background: #09090b; /* Very dark zinc */
+  .dark,
+  [data-theme='dark'] {
+    --background: #0e0e11;
+    /* Deep premium space */
     --foreground: #fafafa;
-    --primary: #006FEE; /* Unique Electric Blue */
-    --primary-hover: #338EF7;
+    --primary: #3b82f6;
+    /* Modern Blue */
+    --primary-hover: #60a5fa;
     --border: #27272a;
-    --card: #18181b;
+    --card: #18181c;
+    /* Slightly elevated from background */
     --card-foreground: #fafafa;
     --muted: #27272a;
     --muted-foreground: #a1a1aa;
-    --error: #f87171;
+    --error: #ef4444;
   }
 
   * {
@@ -54,8 +60,70 @@
 }
 
 @keyframes shake {
-  10%, 90% { transform: translate3d(-1px, 0, 0); }
-  20%, 80% { transform: translate3d(2px, 0, 0); }
-  30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
-  40%, 60% { transform: translate3d(4px, 0, 0); }
+
+  10%,
+  90% {
+    transform: translate3d(-1px, 0, 0);
+  }
+
+  20%,
+  80% {
+    transform: translate3d(2px, 0, 0);
+  }
+
+  30%,
+  50%,
+  70% {
+    transform: translate3d(-4px, 0, 0);
+  }
+
+  40%,
+  60% {
+    transform: translate3d(4px, 0, 0);
+  }
+}
+
+/* React Flow Handle Overrides — larger invisible hit area with visible centered dot */
+.react-flow__handle {
+  width: 20px !important;
+  height: 20px !important;
+  background: transparent !important;
+  border: none !important;
+  border-radius: 50% !important;
+}
+
+.react-flow__handle::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--card);
+  border: 3px solid var(--muted-foreground);
+  transition: all 0.2s ease;
+  pointer-events: none;
+}
+
+.group:hover .react-flow__handle::after {
+  transform: translate(-50%, -50%) scale(1.2);
+  border-color: var(--primary);
+}
+
+/* Colored handles for if-condition branches */
+.react-flow__handle.handle-true::after {
+  border-color: #10b981;
+  /* emerald-500 */
+}
+
+.react-flow__handle.handle-false::after {
+  border-color: #f43f5e;
+  /* rose-500 */
+}
+
+.group:hover .react-flow__handle.handle-true::after,
+.group:hover .react-flow__handle.handle-false::after {
+  transform: translate(-50%, -50%) scale(1.2);
 }

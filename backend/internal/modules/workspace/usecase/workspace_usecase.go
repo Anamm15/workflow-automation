@@ -41,7 +41,7 @@ func (u *workspaceUseCase) CreateWorkspace(ctx context.Context, name string, cre
 		ID:          uuid.New(),
 		WorkspaceID: workspaceID,
 		UserID:      creatorUserID,
-		Role:        domain.RoleOwner, // Default creator role as requested
+		Role:        domain.RoleOwner,
 		Status:      domain.StatusActive,
 		CreatedAt:   now,
 		UpdatedAt:   now,
