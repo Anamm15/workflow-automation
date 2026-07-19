@@ -23,6 +23,9 @@ import (
 	workspaceDeliveryHttp "workflow-automation/internal/modules/workspace/delivery/http"
 	workspaceRepo "workflow-automation/internal/modules/workspace/repository"
 	workspaceUse "workflow-automation/internal/modules/workspace/usecase"
+	workflowDeliveryHttp "workflow-automation/internal/modules/workflow/delivery/http"
+	workflowRepo "workflow-automation/internal/modules/workflow/repository"
+	workflowUse "workflow-automation/internal/modules/workflow/usecase"
 	"workflow-automation/internal/shared/database"
 	"workflow-automation/internal/shared/email"
 	"workflow-automation/internal/shared/logger"
@@ -101,6 +104,10 @@ func main() {
 	pgWorkspaceRepo := workspaceRepo.NewPGWorkspaceRepository(pgPool)
 	workspaceUseCase := workspaceUse.NewWorkspaceUseCase(pgWorkspaceRepo)
 
+	// 8. Initialize Workflow Module
+	pgWorkflowRepo := workflowRepo.NewPGWorkflowRepository(pgPool)
+	workflowUseCase := workflowUse.NewWorkflowUseCase(pgWorkflowRepo)
+
 	// 8. Setup Gin Router
 	if appEnv == "production" {
 		gin.SetMode(gin.ReleaseMode)
@@ -150,6 +157,7 @@ func main() {
 	authDeliveryHttp.NewAuthHandler(apiV1, authUseCase, jwtSecret)
 	userDeliveryHttp.NewUserHandler(apiV1, userUseCase, jwtSecret)
 	workspaceDeliveryHttp.NewWorkspaceHandler(apiV1, workspaceUseCase, jwtSecret)
+	workflowDeliveryHttp.NewWorkflowHandler(apiV1, workflowUseCase, jwtSecret)
 
 	// 10. Start HTTP Server with Graceful Shutdown
 	srv := &http.Server{
