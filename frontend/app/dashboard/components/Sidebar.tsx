@@ -10,7 +10,6 @@ import { useAuth } from "@/contexts/AuthContext";
 
 const NAV_ITEMS = [
   { href: "/dashboard/workspaces", label: "Workspaces", icon: Layers },
-  { href: "/dashboard/workflows", label: "Workflows", icon: Zap },
   { href: "/dashboard/analytics", label: "Analytics", icon: Activity },
   { href: "/dashboard/users", label: "Users", icon: Users },
   { href: "/dashboard/settings", label: "Settings", icon: Settings },

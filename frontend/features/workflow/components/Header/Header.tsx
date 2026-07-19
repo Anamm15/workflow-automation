@@ -39,12 +39,12 @@ export const Header = () => {
     <header className="h-16 flex items-center justify-between px-4 border-b border-border bg-background/80 backdrop-blur-md sticky top-0 z-50">
       {/* Left side */}
       <div className="flex items-center gap-4">
-        <Link href="/workflows" className="text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1.5 text-sm font-medium">
+        <Link href="/dashboard/workspaces" className="text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1.5 text-sm font-medium">
           <ArrowLeft size={16} />
           <span>Workflows</span>
         </Link>
         <div className="w-px h-6 bg-border mx-2" />
-        
+
         <input
           type="text"
           value={workflowName}
@@ -65,7 +65,7 @@ export const Header = () => {
             <div className="w-1.5 h-1.5 rounded-full bg-current" />
             <span className="capitalize">{status}</span>
           </div>
-          
+
           {/* Autosave Status */}
           <div className="text-xs text-muted-foreground flex items-center gap-1.5 ml-2">
             {autosaveStatus === 'saving' && <Loader2 size={12} className="animate-spin" />}
@@ -96,7 +96,7 @@ export const Header = () => {
         </button>
         <button
           onClick={onPublish}
-          className="px-4 py-2 text-sm font-medium bg-primary text-primary-foreground hover:bg-primary-hover transition-colors rounded-md shadow-sm"
+          className="px-4 py-2 text-sm font-medium bg-primary text-white hover:bg-primary-hover transition-colors rounded-md shadow-sm"
         >
           Publish
         </button>

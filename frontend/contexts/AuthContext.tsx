@@ -88,7 +88,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = (token: string, userData: User) => {
     setAccessToken(token);
     setUser(userData);
-    router.push("/dashboard/workflows"); // Default redirect as requested
+    router.push("/dashboard/workspaces"); // Default redirect as requested
   };
 
   return (

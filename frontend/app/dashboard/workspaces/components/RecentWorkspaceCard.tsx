@@ -2,7 +2,6 @@
 
 import { Workspace } from "../hooks/useWorkspaceApi";
 import { MoreHorizontal, ShieldAlert, Key, Edit, LogOut, Trash2, UserPlus, Eye } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
@@ -47,7 +46,7 @@ export function RecentWorkspaceCard({ workspace }: { workspace: Workspace }) {
 
   return (
     <Link
-      href={`/workspace/${workspace.id}`}
+      href={`/dashboard/workspaces/${workspace.id}/workflow`}
       className="relative flex flex-col justify-between overflow-visible rounded-[20px] border border-black/5 dark:border-white/10 bg-card/40 p-6 backdrop-blur-xl transition-all duration-300 hover:bg-card/60 hover:border-black/10 dark:hover:border-white/20 hover:shadow-2xl hover:shadow-primary/5 min-h-[160px] group cursor-pointer"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => {
