@@ -9,6 +9,7 @@ import {
   MarkerType
 } from '@xyflow/react';
 import { WorkflowState, CustomNode, CustomEdge } from '../types';
+import { api } from '@/lib/api';
 
 export const useWorkflowStore = create<WorkflowState>((set, get) => ({
   nodes: [],
@@ -177,5 +178,57 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
     // Check if nodes are disconnected (except trigger)
     // Complex validation would go here. For now, simple true if there are nodes.
     return nodes.length > 0;
+  },
+
+  loadWorkflowData: async (id: string) => {
+    try {
+      const res = await api.get(`/workflows/${id}`);
+      const data = res.data.data;
+      if (data) {
+        set({ workflowName: data.name, status: data.status });
+        if (data.draft_json && typeof data.draft_json === 'object') {
+          const draft = data.draft_json;
+          if (draft.nodes) set({ nodes: draft.nodes });
+          if (draft.edges) set({ edges: draft.edges });
+        }
+      }
+    } catch (error) {
+      console.error("Failed to load workflow data", error);
+    }
+  },
+
+  saveDraft: async (id: string) => {
+    const { nodes, edges, workflowName } = get();
+    set({ autosaveStatus: 'saving' });
+    try {
+      await api.patch(`/workflows/${id}`, {
+        name: workflowName,
+        draft_json: { nodes, edges }
+      });
+      set({ autosaveStatus: 'saved' });
+    } catch (error) {
+      console.error("Failed to save draft", error);
+      set({ autosaveStatus: 'unsaved' });
+      throw error;
+    }
+  },
+
+  publishWorkflow: async (id: string) => {
+    try {
+      await api.post(`/workflows/${id}/publish`);
+      set({ status: 'active' });
+    } catch (error) {
+      console.error("Failed to publish workflow", error);
+      throw error;
+    }
+  },
+
+  testWorkflow: async (id: string) => {
+    try {
+      await api.post(`/workflows/${id}/test`, { payload: {} });
+    } catch (error) {
+      console.error("Failed to test workflow", error);
+      throw error;
+    }
   }
 }));

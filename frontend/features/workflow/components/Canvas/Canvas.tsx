@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useRef } from 'react';
+import React, { useCallback, useMemo, useRef, useEffect, useState } from 'react';
 import {
   ReactFlow,
   MiniMap,
@@ -15,6 +15,7 @@ import { WorkflowNode } from '../Nodes/WorkflowNode';
 import { InsertEdge } from '../Edges/InsertEdge';
 import { NODE_TEMPLATES } from '../../constants/nodeTypes';
 import { PlusCircle } from 'lucide-react';
+import { useParams } from 'next/navigation';
 
 const nodeTypes: import('@xyflow/react').NodeTypes = {
   workflow: WorkflowNode as any,
@@ -36,8 +37,42 @@ const WorkflowCanvasInner = () => {
     isSidebarOpen
   } = useWorkflowStore();
   
-  const { screenToFlowPosition } = useReactFlow();
+  const { screenToFlowPosition, getViewport, setViewport } = useReactFlow();
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
+  const params = useParams();
+  const id = params?.id as string;
+  const [hasSavedViewport, setHasSavedViewport] = useState(false);
+
+  useEffect(() => {
+    if (id && id !== 'new') {
+      const saved = localStorage.getItem(`workflow-viewport-${id}`);
+      if (saved) setHasSavedViewport(true);
+    }
+  }, [id]);
+
+  const onMoveEnd = useCallback(() => {
+    if (id && id !== 'new') {
+      const viewport = getViewport();
+      localStorage.setItem(`workflow-viewport-${id}`, JSON.stringify(viewport));
+    }
+  }, [id, getViewport]);
+
+  const onInit = useCallback(() => {
+    if (id && id !== 'new') {
+      const savedViewport = localStorage.getItem(`workflow-viewport-${id}`);
+      if (savedViewport) {
+        try {
+          const viewport = JSON.parse(savedViewport);
+          // Wait a tick for xyflow to be fully ready before restoring
+          setTimeout(() => {
+            setViewport(viewport);
+          }, 50);
+        } catch (e) {
+          console.error("Failed to parse saved viewport", e);
+        }
+      }
+    }
+  }, [id, setViewport]);
 
   const onDragOver = useCallback((event: React.DragEvent) => {
     event.preventDefault();
@@ -101,10 +136,12 @@ const WorkflowCanvasInner = () => {
         onDragOver={onDragOver}
         onPaneClick={onPaneClick}
         onNodeClick={onNodeClick}
+        onMoveEnd={onMoveEnd}
+        onInit={onInit}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         defaultEdgeOptions={{ type: 'insert' }}
-        fitView
+        fitView={!hasSavedViewport}
         className="workflow-canvas"
       >
         <Background 

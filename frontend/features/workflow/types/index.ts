@@ -49,4 +49,8 @@ export interface WorkflowState {
   toggleSidebar: () => void;
   toggleProperties: () => void;
   validateWorkflow: () => boolean;
+  loadWorkflowData: (id: string) => Promise<void>;
+  saveDraft: (id: string) => Promise<void>;
+  publishWorkflow: (id: string) => Promise<void>;
+  testWorkflow: (id: string) => Promise<void>;
 }

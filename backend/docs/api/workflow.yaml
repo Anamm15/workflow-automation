@@ -1,0 +1,303 @@
+openapi: 3.0.3
+info:
+  title: Workflow API
+  description: Workflow Builder and Execution Engine API.
+  version: 1.0.0
+servers:
+  - url: http://localhost:8080/api/v1
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    WorkflowResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        workspace_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+          enum: [draft, active, paused, archived]
+        draft_json:
+          type: object
+          description: "DAG graph definition (nodes and edges)"
+        current_version_id:
+          type: string
+          format: uuid
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    WorkflowVersionResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        workflow_id:
+          type: string
+          format: uuid
+        version_number:
+          type: integer
+        definition_json:
+          type: object
+        status:
+          type: string
+          enum: [active, paused]
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    TriggerConfig:
+      type: object
+      required: [type]
+      properties:
+        type:
+          type: string
+          enum: [manual, webhook, schedule]
+        config_json:
+          type: object
+        is_enabled:
+          type: boolean
+security:
+  - bearerAuth: []
+paths:
+  /workflows:
+    post:
+      summary: Create a new workflow
+      tags: [Workflows]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [workspace_id, name]
+              properties:
+                workspace_id:
+                  type: string
+                  format: uuid
+                name:
+                  type: string
+                description:
+                  type: string
+      responses:
+        '201':
+          description: Workflow created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkflowResponse'
+    get:
+      summary: Get all workflows in a workspace
+      tags: [Workflows]
+      parameters:
+        - in: query
+          name: workspace_id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: List of workflows
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/WorkflowResponse'
+  /workflows/{id}:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      summary: Get workflow details
+      tags: [Workflows]
+      responses:
+        '200':
+          description: Workflow details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkflowResponse'
+    patch:
+      summary: Update workflow draft (auto-save canvas)
+      tags: [Workflows]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                description:
+                  type: string
+                draft_json:
+                  type: object
+      responses:
+        '200':
+          description: Draft updated successfully
+    delete:
+      summary: Delete workflow
+      tags: [Workflows]
+      responses:
+        '200':
+          description: Workflow deleted successfully
+  /workflows/{id}/publish:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+          format: uuid
+    post:
+      summary: Publish current draft to a new version
+      description: Performs a DAG cyclic validation before publishing.
+      tags: [Workflow Versions]
+      responses:
+        '200':
+          description: Published successfully
+        '400':
+          description: Cyclic graph detected or other validation error
+  /workflows/{id}/versions:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      summary: List all versions of a workflow
+      tags: [Workflow Versions]
+      responses:
+        '200':
+          description: List of versions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/WorkflowVersionResponse'
+  /workflows/{id}/activate:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+          format: uuid
+    patch:
+      summary: Activate a specific workflow version
+      tags: [Workflow Versions]
+      responses:
+        '200':
+          description: Version activated
+  /workflows/{id}/pause:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+          format: uuid
+    patch:
+      summary: Pause a specific workflow version
+      tags: [Workflow Versions]
+      responses:
+        '200':
+          description: Version paused
+  /workflows/{id}/triggers:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+          format: uuid
+    post:
+      summary: Configure triggers for the current version
+      tags: [Workflow Triggers]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [triggers]
+              properties:
+                triggers:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/TriggerConfig'
+      responses:
+        '200':
+          description: Triggers configured
+  /workflows/{id}/test:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+          format: uuid
+    post:
+      summary: Test mock execution of a workflow
+      tags: [Workflow Triggers]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [payload]
+              properties:
+                payload:
+                  type: object
+      responses:
+        '200':
+          description: Mock execution completed
+          content:
+            application/json:
+              schema:
+                type: object
+  /webhook/{webhook_id}:
+    parameters:
+      - in: path
+        name: webhook_id
+        required: true
+        schema:
+          type: string
+    post:
+      summary: Public endpoint for triggering workflows via Webhook
+      tags: [Workflow Triggers]
+      security: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Webhook received and processed
